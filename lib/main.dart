@@ -33,7 +33,7 @@ class MyApp extends StatelessWidget {
     super.key,
   });
 
-  // This widget is the root of your application.
+
   @override
   Widget build(BuildContext context) {
     ScreenUtil.init(context);
@@ -50,7 +50,12 @@ class MyApp extends StatelessWidget {
             child: child!,
           );
         },
-        title: 'DataBlitz',
+
+
+
+
+
+        title: 'DataBlitz   Code',
 
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
