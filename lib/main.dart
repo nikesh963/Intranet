@@ -33,7 +33,7 @@ class MyApp extends StatelessWidget {
     super.key,
   });
 
-  // This widget is the root of your application.
+  // This widget is the root of your application os tjopaj'dfagnma'g dfgj.
   @override
   Widget build(BuildContext context) {
     ScreenUtil.init(context);
