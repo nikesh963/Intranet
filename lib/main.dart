@@ -50,7 +50,12 @@ class MyApp extends StatelessWidget {
             child: child!,
           );
         },
-        title: 'DataBlitz',
+
+
+
+
+
+        title: 'DataBlitz   Code',
 
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
