@@ -51,7 +51,6 @@ class MyApp extends StatelessWidget {
           );
         },
         title: 'Itranet',
-
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
         themeMode: ThemeMode.light,
