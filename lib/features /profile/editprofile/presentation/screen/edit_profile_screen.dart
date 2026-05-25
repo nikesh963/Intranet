@@ -18,21 +18,21 @@ class EditProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.colors.white,
-      // appBar: DBAppBar(
-      //   title: "Edit Profile",
-      //   isLeadingWidget: true,
-      //   leadingCallback: () {
-      //     if (controller.hasChanges) {
-      //       _showDiscardChangesDialog();
-      //     } else {
-      //       Get.back();
-      //     }
-      //   },
-      // ),
+      appBar: DBAppBar(
+        title: "Edit Profile",
+        isLeadingWidget: false,
+        // leadingCallback: () {
+        //   if (controller.hasChanges) {
+        //     _showDiscardChangesDialog();
+        //   } else {
+        //     Get.back();
+        //   }
+        // },
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Obx(() {
-            final profile = controller.editedProfile.value;
+            final profile = controller.employee.value;
             return Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
               child: Column(
@@ -43,73 +43,102 @@ class EditProfileScreen extends StatelessWidget {
 
                   // Name Section (Non-editable)
                   _buildSectionTitle('Name'),
-                  _buildNonEditableRow('First Name', profile.firstName),
-                  _buildNonEditableRow('Last Name', profile.lastName),
+                  _buildNonEditableRow('First Name', profile?.name ?? ''),
+                  _buildNonEditableRow('Last Name', profile?.lastName ?? ''),
 
                   SizedBox(height: 24.h),
 
                   // Personal Details Section
                   _buildSectionTitle('Personal Details'),
-                  _buildNonEditableRow('Employee TIS', profile.employeeTIS),
-                  _buildNonEditableRow('Team Name', profile.teamName),
-                  _buildNonEditableRow('Father Name', profile.fatherName),
-                  _buildEditableTextField('Mother Name', profile.motherName, 'motherName'),
-                  _buildEditableTextField('Phone', profile.phone, 'phone'),
-                  _buildNonEditableRow('Personal Email Id', profile.personalEmail),
-                  _buildNonEditableRow('Official Date of Birth*', profile.officialDOB),
-                  _buildNonEditableRow('Blood Group', profile.bloodGroup),
-                  _buildEditableTextField('Height', profile.height, 'height'),
-                  _buildEditableTextField('Weight', profile.weight, 'weight'),
-                  _buildNonEditableRow('Aadhar Number', profile.aadharNumber),
-                  _buildEditableTextField('Alternate Contact Number', profile.alternateContact, 'alternateContact'),
-                  _buildEditableTextField('Emergency Contact Number', profile.emergencyContact, 'emergencyContact'),
-                  _buildEditableTextField('Emergency Contact Person Name', profile.emergencyContactPerson, 'emergencyContactPerson'),
-                  _buildNonEditableRow('Gender', profile.gender),
-                  _buildEditableDropdown(
-                      'Marital Status',
-                      profile.maritalStatus,
-                      'maritalStatus',
-                      ['Single', 'Married', 'Divorced', 'Widowed', 'Unmarried']
+                  _buildNonEditableRow('Employee TIS', profile?.tisId ?? ''),
+                  _buildNonEditableRow('Team Name', profile?.teamName ?? ''),
+                  _buildNonEditableRow(
+                    'Father Name',
+                    profile?.fatherName ?? "",
                   ),
-                  _buildNonEditableRow('PAN', profile.panNumber),
-                  _buildEditableTextField('Passport Number', profile.passportNumber, 'passportNumber'),
-                  _buildNonEditableRow('Election Card Number', profile.electionCardNumber),
-                  _buildNonEditableRow('Driving Licence Number', profile.drivingLicenseNumber),
-                  _buildNonEditableRow('Permanent Address', profile.permanentAddress, isMultiline: true),
-                  _buildEditableTextField('Temporary Address', profile.temporaryAddress, 'temporaryAddress', isMultiline: true),
+                  _buildEditableTextField(
+                    label: 'Mother Name',
+                    controller: controller.motherNameController,
+                  ),
+                  _buildEditableTextField(
+                    label: 'Phone',
+                    controller: controller.phoneController,
+                  ),
+                  _buildNonEditableRow('Personal Email Id', profile?.personalEmail ?? ''),
+                  _buildNonEditableRow(
+                    'Official Date of Birth*',
+                    profile?.officialDob?.toString().split(" ").first ?? "",
+                  ),
+                  _buildNonEditableRow('Blood Group', profile?.bloodGroup ?? ''),
+                  _buildEditableTextField(
+                    label: 'Height',
+                    controller: controller.heightController,
+                  ),
+                  _buildEditableTextField(
+                    label: 'Weight',
+                    controller: controller.weightController,
+                  ),
+                  _buildNonEditableRow('Aadhar Number', profile?.aadharNumber??""),
+                  // _buildEditableTextField('Alternate Contact Number', profile.alternateContact, 'alternateContact'),
+                  // _buildEditableTextField('Emergency Contact Number', profile.emergencyContact, 'emergencyContact'),
+                  // _buildEditableTextField('Emergency Contact Person Name', profile.emergencyContactPerson, 'emergencyContactPerson'),
+                  _buildNonEditableRow('Gender', profile?.gender??""),
+                  _buildEditableDropdown(),
+                  _buildNonEditableRow('PAN', profile?.panCard ?? ''),
+                  // _buildEditableTextField('Passport Number', profile.passportNumber, 'passportNumber'),
+                  _buildNonEditableRow('Election Card Number', profile?.electionCardNumber??""),
+                  _buildNonEditableRow('Driving Licence Number', profile?.drivingLicenceNumber ?? ''),
+                  _buildNonEditableRow('Permanent Address',profile?.address ?? '', isMultiline: true),
+                  _buildEditableTextField(
+                    label: 'Temporary Address',
+                    controller: controller.temporaryAddressController,
+                    isMultiline: true,
+                  ),
 
                   SizedBox(height: 24.h),
 
                   // Company Details Section
                   _buildSectionTitle('Company Details'),
-                  _buildNonEditableRow('HR', profile.hrName),
-                  _buildNonEditableRow('Support Officer', profile.supportOfficer),
-                  _buildNonEditableRow('Designation', profile.designation),
-                  _buildNonEditableRow('Date Of Joining', profile.dateOfJoining),
-                  _buildNonEditableRow('Previous Appraisal Due', profile.previousAppraisalDue),
-                  _buildNonEditableRow('Next Appraisal Due', profile.nextAppraisalDue),
-                  _buildNonEditableRow('Allowed leaves', profile.allowedLeaves),
+                  // _buildNonEditableRow('HR', profile.hrName),
+                  // _buildNonEditableRow('Support Officer', profile.supportOfficer),
+                  // _buildNonEditableRow('Designation', profile.designation),
+                  _buildNonEditableRow(
+                    'Date Of Joining',
+                    profile?.companyDoj?.toString().split(" ").first ?? "",
+                  ),
+                  _buildNonEditableRow(
+                    'Previous Appraisal Due',
+                    profile?.prevApprisalDate?.toString().split(" ").first ?? "",
+                  ),
+                  _buildNonEditableRow(
+                    'Next Appraisal Due',
+                    profile?.nextApprisalDate?.toString().split(" ").first ?? "",
+                  ),
+                  _buildNonEditableRow(
+                    'Allowed leaves',
+                    profile?.allowedApprisalPeriodLeaves?.toString() ?? "",
+                  ),
 
                   SizedBox(height: 24.h),
 
                   // Bank Account Details Section
                   _buildSectionTitle('Bank Account Details'),
-                  _buildNonEditableRow('Account Holder Name', profile.accountHolderName),
-                  _buildNonEditableRow('Account Number', profile.accountNumber),
-                  _buildNonEditableRow('Bank Name', profile.bankName),
-                  _buildNonEditableRow('Bank Identifier Code', profile.bankIdentifierCode),
-                  _buildNonEditableRow('Branch Location', profile.branchLocation, isMultiline: true),
-                  _buildNonEditableRow('Tax Payer Id', profile.taxPayerId),
+                  _buildNonEditableRow('Account Holder Name', profile?.accountHolderName??""),
+                  _buildNonEditableRow('Account Number', profile?.accountNumber??""),
+                  _buildNonEditableRow('Bank Name', profile?.bankName??""),
+                  _buildNonEditableRow('Bank Identifier Code', profile?.bankIdentifierCode??""),
+                  _buildNonEditableRow('Branch Location', profile?.branchLocation??"", isMultiline: true),
+                  _buildNonEditableRow('Tax Payer Id', profile?.taxPayerId??""),
 
                   SizedBox(height: 24.h),
 
                   // Social Profiles Section
-                  _buildSectionTitle('Social Profiles'),
-                  _buildEditableTextField('TechInfini Skype ID', profile.techinfiniSkypeId, 'techinfiniSkypeId'),
-                  _buildEditableTextField('Facebook Profile URL', profile.facebookUrl, 'facebookUrl'),
-                  _buildEditableTextField('Twitter Profile URL', profile.twitterUrl, 'twitterUrl'),
-                  _buildEditableTextField('Google Plus Profile URL', profile.googlePlusUrl, 'googlePlusUrl'),
-                  _buildEditableTextField('LinkedIn Profile URL', profile.linkedInUrl, 'linkedInUrl'),
+                  // _buildSectionTitle('Social Profiles'),
+                  // _buildEditableTextField('TechInfini Skype ID', profile.techinfiniSkypeId, 'techinfiniSkypeId'),
+                  // _buildEditableTextField('Facebook Profile URL', profile.facebookUrl, 'facebookUrl'),
+                  // _buildEditableTextField('Twitter Profile URL', profile.twitterUrl, 'twitterUrl'),
+                  // _buildEditableTextField('Google Plus Profile URL', profile.googlePlusUrl, 'googlePlusUrl'),
+                  // _buildEditableTextField('LinkedIn Profile URL', profile.linkedInUrl, 'linkedInUrl'),
 
                   SizedBox(height: 32.h),
 
@@ -131,7 +160,8 @@ class EditProfileScreen extends StatelessWidget {
         children: [
           Obx(() {
             final imagePath = controller.selectedImagePath.value;
-            final profile = controller.editedProfile.value;
+            final profile = controller.employee.value;
+
 
             Widget imageWidget;
 
@@ -145,17 +175,24 @@ class EditProfileScreen extends StatelessWidget {
                   fit: BoxFit.cover,
                 ),
               );
-            } else if (profile.profileImagePath.isNotEmpty) {
+            } else if ((profile?.profileImage ?? '').isNotEmpty) {
               imageWidget = ClipRRect(
                 borderRadius: BorderRadius.circular(75.r),
-                child: Image.file(
-                  File(profile.profileImagePath),
+                child: Image.network(
+                  profile!.profileImage!,
                   width: 150.w,
                   height: 150.h,
                   fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) {
+                    return Icon(
+                      Icons.person,
+                      size: 60.w,
+                      color: Colors.white,
+                    );
+                  },
                 ),
               );
-            } else {
+            }else {
               imageWidget = Container(
                 width: 150.w,
                 height: 150.h,
@@ -279,7 +316,11 @@ class EditProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEditableTextField(String label, String value, String fieldName, {bool isMultiline = false}) {
+  Widget _buildEditableTextField({
+    required String label,
+    required TextEditingController controller,
+    bool isMultiline = false,
+  }) {
     return Container(
       margin: EdgeInsets.symmetric(vertical: 8.h),
       child: Column(
@@ -295,87 +336,141 @@ class EditProfileScreen extends StatelessWidget {
           ),
           SizedBox(height: 4.h),
           TextField(
-            controller: TextEditingController(text: value),
-            onChanged: (newValue) => controller.updateField(fieldName, newValue),
+            controller: controller,
             maxLines: isMultiline ? 3 : 1,
             decoration: InputDecoration(
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8.r),
-                borderSide: BorderSide(color: AppTheme.colors.blue),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8.r),
-                borderSide: BorderSide(color: Colors.grey[300]!),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8.r),
-                borderSide: BorderSide(color: AppTheme.colors.blue),
               ),
               contentPadding: EdgeInsets.all(12.w),
             ),
+            // onChanged: (_) {
+            //   controller.selection = controller.selection;
+            // },
           ),
         ],
       ),
     );
   }
+  Widget _buildEditableDropdown() {
+    final List<String> maritalOptions = [
+      'Single',
+      'Married',
+      'Divorced',
+      'Widowed',
+      'Unmarried',
+    ];
 
-  Widget _buildEditableDropdown(String label, String value, String fieldName, List<String> options) {
-    return Container(
-      margin: EdgeInsets.symmetric(vertical: 8.h),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w600,
-              color: Colors.black,
-            ),
-          ),
-          SizedBox(height: 4.h),
-          Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey[300]!),
-              borderRadius: BorderRadius.circular(8.r),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: value,
-                isExpanded: true,
-                padding: EdgeInsets.symmetric(horizontal: 12.w),
-                items: options.map((String option) {
-                  return DropdownMenuItem<String>(
-                    value: option,
-                    child: Text(
-                      option,
-                      style: TextStyle(fontSize: 14.sp),
-                    ),
-                  );
-                }).toList(),
-                onChanged: (String? newValue) {
-                  if (newValue != null) {
-                    controller.updateField(fieldName, newValue);
-                  }
-                },
+    return Obx(() {
+      return Container(
+        margin: EdgeInsets.symmetric(vertical: 8.h),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Marital Status",
+              style: TextStyle(
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w600,
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
 
+            SizedBox(height: 4.h),
+
+            PopupMenuButton<String>(
+              color: Colors.white,
+              offset: Offset(0, 5.h),
+
+              constraints: BoxConstraints(
+                minWidth: 150.w,
+                maxWidth: 300.w,
+                maxHeight: 300.h,
+              ),
+
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12.r),
+              ),
+
+              elevation: 8,
+
+              menuPadding: EdgeInsets.all(12.w),
+
+              child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(
+                  horizontal: 12.w,
+                  vertical: 14.h,
+                ),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: Colors.grey.shade300,
+                  ),
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                child: Row(
+                  mainAxisAlignment:
+                  MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      controller.maritalStatus.value.isNotEmpty
+                          ? controller.maritalStatus.value
+                          : 'Select Marital Status',
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        color:
+                        controller.maritalStatus.value.isNotEmpty
+                            ? Colors.black
+                            : Colors.grey,
+                      ),
+                    ),
+
+                    Icon(Icons.arrow_drop_down),
+                  ],
+                ),
+              ),
+
+              itemBuilder: (BuildContext context) {
+                return maritalOptions.map((status) {
+                  return PopupMenuItem<String>(
+                    value: status,
+
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 12.h,
+                    ),
+
+                    child: Text(status),
+                  );
+                }).toList();
+              },
+
+              onSelected: (String value) {
+                controller.maritalStatus.value = value;
+              },
+            ),
+          ],
+        ),
+      );
+    });
+  }
   Widget _buildUpdateButton() {
     return Obx(() {
       return SizedBox(
         width: double.infinity,
         child: ElevatedButton(
-          onPressed: controller.hasChanges && !controller.isLoading.value
+          // onPressed: controller.hasChanges && !controller.isLoading.value
+          // onPressed: !controller.isLoading.value
+          //     ? () => controller.updateProfile()
+          //     : null,
+          onPressed: controller.hasChanges.value &&
+              !controller.isLoading.value
               ? () => controller.updateProfile()
               : null,
           style: ElevatedButton.styleFrom(
-            backgroundColor: controller.hasChanges ? AppTheme.colors.blue : Colors.grey[400],
+            // backgroundColor: controller.hasChanges ? AppTheme.colors.blue : Colors.grey[400],
+            backgroundColor: controller.hasChanges.value
+                ? AppTheme.colors.blue
+                : Colors.grey[400],
             padding: EdgeInsets.symmetric(vertical: 16.h),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12.r),
@@ -412,7 +507,7 @@ class EditProfileScreen extends StatelessWidget {
       textCancel: 'Cancel',
       confirmTextColor: Colors.white,
       onConfirm: () {
-        controller.resetChanges();
+        // controller.resetChanges();
         Get.back();
         Get.back();
       },

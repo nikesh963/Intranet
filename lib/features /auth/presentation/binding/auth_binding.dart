@@ -27,6 +27,9 @@ import 'package:get/get.dart';
 import 'package:intranet/core/network/network_info.dart';
 import '../../../../Common/helper/ApiHelper.dart';
 import '../controller/auth_controller.dart';
+import '../controller/create_new_password_controller.dart';
+import '../controller/forgot_password_controller.dart';
+import '../controller/verify_otp_controller.dart';
 
 class AuthBinding extends Bindings {
   @override
@@ -40,5 +43,21 @@ class AuthBinding extends Bindings {
       networkInfo: networkInfo,
       apiHelper: apiHelper, // Pass ApiHelper instead of Dio
     ));
+    Get.lazyPut<ForgotPasswordController>(
+          () => ForgotPasswordController(
+        // apiHelper: Get.find<ApiHelper>(),
+      ),
+    );
+
+    Get.lazyPut<VerifyOtpController>(
+          () => VerifyOtpController(
+      ),
+    );
+
+    Get.lazyPut<CreateNewPasswordController>(
+          () => CreateNewPasswordController(
+        // apiHelper: Get.find<ApiHelper>(),
+      ),
+    );
   }
 }

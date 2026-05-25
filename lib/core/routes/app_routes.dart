@@ -6,9 +6,9 @@ class AppRoutes {
   static String welcome = '/welcome';
   static String login = '/login';
   static String createAccount = '/createAccount';
-  static String forgotPassword = '/forgotPassword';
-  static String verification = '/verification';
-  static String createNewPassword = '/createNewPassword';
+  static const forgotPassword = '/forgot-password';
+  static const verifyOtp = '/verify-otp';
+  static const createNewPassword = '/create-new-password';
 
   //------------ Home Routes ------------
   static String dashboard = '/dashboard';
@@ -20,6 +20,7 @@ class AppRoutes {
   static String addAddress = '/addAddress';
   static String updateAddress = '/updateAddress';
   static String webView = '/webView';
+  static String reply = '/reply';
 
   //------------ Products Routes ------------
   static String collection = '/collection';

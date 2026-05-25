@@ -14,12 +14,13 @@ class AppColors {
   final white = const Color(0xFFFFFFFF);
   final black = const Color(0xFF000000);
   final darkGray = const Color(0xFF545454);
-  final gray = const Color(0xFF767575);
+  final gray = const Color(0xFFD1D1D1);
   final lightGray = const Color(0xFFBFBFBF);
   final goldenYellow = const Color(0xFFFFCB11);
   final yellow = const Color(0xFFFEF200);
   final red = const Color(0xFFFF3838);
   final successGreen = const Color(0xFFB7F7C4);
+  final green = const Color(0xFF0EBE7F);
   final infoBlue = const Color(0xFFB3E6F5);
   final warningYellow = const Color(0xFFFBE7C6);
   final errorRed = const Color(0xFFFFB7B6);

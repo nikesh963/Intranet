@@ -1,9 +1,12 @@
 // features/tickets/presentation/screens/manage_tickets_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:shimmer/shimmer.dart';
 
+import '../../../../core/constants/icons.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widget/app_bar/custom_app_bar.dart';
 import '../../model/manage_ticket_model.dart';
@@ -13,11 +16,12 @@ class ManageTicketsScreen extends StatelessWidget {
   ManageTicketsScreen({super.key});
 
   final ManageTicketsController controller = Get.put(ManageTicketsController());
-  final ScrollController _horizontalScrollController = ScrollController();
-  final ValueNotifier<bool> _isScrollingNotifier = ValueNotifier<bool>(false);
 
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance?.addPostFrameCallback((_) {
+      controller.  getTickets(page: 1);
+    });
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -33,8 +37,8 @@ class ManageTicketsScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Search Section
-                  _buildSearchSection(),
-                  SizedBox(height: 24.h),
+                  // _buildSearchSection(),
+                  // SizedBox(height: 24.h),
                   // Create Ticket Button
                   _buildCreateTicketButton(),
                   SizedBox(height: 24.h),
@@ -61,7 +65,8 @@ class ManageTicketsScreen extends StatelessWidget {
           child: TextField(
             controller: controller.searchController,
             onChanged: (value) {
-              controller.update();
+              // controller.update();
+              controller.filteredTickets;
             },
             style: TextStyle(fontSize: 16.sp, color: Colors.black),
             textAlignVertical: TextAlignVertical.center,
@@ -103,409 +108,447 @@ class ManageTicketsScreen extends StatelessWidget {
   }
 
   Widget _buildCreateTicketButton() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        // "Page" text
-        Row(
-          children: [
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h),
-              child: Text(
-                "Page",
-                style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w400),
+
+    return Obx(() {
+
+      return Row(
+        mainAxisAlignment:
+        MainAxisAlignment.spaceBetween,
+
+        children: [
+
+          /// PAGE SELECTOR
+          Row(
+            children: [
+
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: 8.w,
+                  vertical: 8.h,
+                ),
+                child: Text(
+                  "Page",
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
               ),
-            ),
 
-        SizedBox(width: 8.w),
+              SizedBox(width: 8.w),
 
-        // Page number dropdown/input
-        Container(
-          width: 45.w,
-          height: 35.h,
-          padding: EdgeInsets.only(left: 8.w),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(4.r),
-            border: Border.all(
-              color: AppTheme.colors.black.withOpacity(0.2),
-              width: 1.w,
-            ),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: "1",
-              icon: Icon(Icons.arrow_drop_down, size: 20.w),
-              isExpanded: true,
-              items: List.generate(10, (index) => (index + 1).toString()).map((
-                String value,
-              ) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(
-                    value,
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w400,
+              PopupMenuButton<String>(
+
+                color: Colors.white,
+
+                offset: Offset(0, 5.h),
+
+                onSelected: (String newValue) {
+
+                  controller.changePage(
+                    int.parse(newValue),
+                  );
+                },
+
+                itemBuilder: (BuildContext context) {
+
+                  return List.generate(
+                    controller.lastPage.value,
+                        (index) => (index + 1).toString(),
+                  ).map((String value) {
+
+                    return PopupMenuItem<String>(
+                      value: value,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 12.h,
+                      ),
+                      child: Text(value),
+                    );
+                  }).toList();
+                },
+
+                child: Container(
+
+                  width: 55.w,
+                  height: 38.h,
+
+                  padding:
+                  EdgeInsets.symmetric(
+                    horizontal: 10.w,
+                  ),
+
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius:
+                    BorderRadius.circular(8.r),
+                    border: Border.all(
+                      color: AppTheme.colors.black
+                          .withOpacity(0.2),
                     ),
                   ),
-                );
-              }).toList(),
-              onChanged: (String? newValue) {
-                // Handle page change
-              },
-            ),
-          ),
-        ),
-          ],
-        ),
-        ElevatedButton.icon(
-          onPressed: controller.onCreateTicketPressed,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.colors.blue,
-            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8.r),
-            ),
-          ),
-          icon: Icon(Icons.add, size: 20.w, color: Colors.white),
-          label: Text(
-            'Create Ticket',
-            style: TextStyle(
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 
-  Widget _buildTicketsTable() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8.r),
-          ),
-          child: Column(
-            children: [
-              NotificationListener<ScrollNotification>(
-                onNotification: (notification) {
-                  if (notification is ScrollStartNotification ||
-                      notification is ScrollUpdateNotification) {
-                    _isScrollingNotifier.value = true;
-                  } else if (notification is ScrollEndNotification) {
-                    Future.delayed(Duration(milliseconds: 500), () {
-                      _isScrollingNotifier.value = false;
-                    });
-                  }
-                  return false;
-                },
-                child: Obx(() {
-                  return SingleChildScrollView(
-                    controller: _horizontalScrollController,
-                    scrollDirection: Axis.horizontal,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Table Header
-                        Container(
-                          width: _calculateTotalWidth(),
-                          padding: EdgeInsets.symmetric(
-                            vertical: 12.h,
-                            horizontal: 16.w,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppTheme.colors.gray,
-                            borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(8.r),
-                              topRight: Radius.circular(8.r),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              _buildHeaderCell("Action", 80.w),
-                              _buildHeaderCell("Employee", 120.w),
-                              _buildHeaderCell("Date", 100.w),
-                              _buildHeaderCell("Ticket Code", 120.w),
-                              _buildHeaderCell("Status", 100.w),
-                              _buildHeaderCell("Title", 150.w),
-                              _buildHeaderCell("Description", 200.w),
-                              _buildHeaderCell("RO", 100.w),
-                              _buildHeaderCell("New", 80.w),
-                              _buildHeaderCell("Department", 150.w),
-                              _buildHeaderCell("Priority", 100.w),
-                              _buildHeaderCell("Created By", 120.w),
-                              _buildHeaderCell("Created At", 120.w),
-                            ],
-                          ),
+                  child: Row(
+                    mainAxisAlignment:
+                    MainAxisAlignment.spaceBetween,
+                    children: [
+
+                      Text(
+                        controller.currentPage.value
+                            .toString(),
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w500,
                         ),
+                      ),
 
-                        // Table Body
-                        Column(
-                          children: controller.filteredTickets
-                              .asMap()
-                              .entries
-                              .map((entry) {
-                                final index = entry.key;
-                                final ticket = entry.value;
-
-                                return Container(
-                                  width: _calculateTotalWidth(),
-                                  padding: EdgeInsets.symmetric(
-                                    vertical: 12.h,
-                                    horizontal: 16.w,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    border: Border(
-                                      bottom:
-                                          index ==
-                                              controller
-                                                      .filteredTickets
-                                                      .length -
-                                                  1
-                                          ? BorderSide.none
-                                          : BorderSide(
-                                              color: AppTheme.colors.gray,
-                                              width: 1,
-                                            ),
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      _buildActionCell(ticket, 80.w),
-                                      _buildDataCell(ticket.employee, 120.w),
-                                      _buildDataCell(ticket.date, 100.w),
-                                      _buildDataCell(ticket.ticketCode, 120.w),
-                                      _buildStatusCell(
-                                        ticket.status,
-                                        ticket.getStatusColor(),
-                                        100.w,
-                                      ),
-                                      _buildDataCell(ticket.title, 150.w),
-                                      _buildDataCell(ticket.description, 200.w),
-                                      _buildDataCell(ticket.ro, 100.w),
-                                      _buildDataCell(ticket.newStatus, 80.w),
-                                      _buildDataCell(ticket.department, 150.w),
-                                      _buildPriorityCell(
-                                        ticket.priority,
-                                        ticket.getPriorityColor(),
-                                        100.w,
-                                      ),
-                                      _buildDataCell(ticket.createdBy, 120.w),
-                                      _buildDataCell(ticket.createdAt, 120.w),
-                                    ],
-                                  ),
-                                );
-                              })
-                              .toList(),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-              ),
-
-              // Scroll Indicator
-              Container(
-                height: 6.h,
-                margin: EdgeInsets.symmetric(vertical: 8.h),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final totalWidth = _calculateTotalWidth();
-                    final visibleWidth =
-                        MediaQuery.of(context).size.width - 32.w;
-
-                    if (totalWidth <= visibleWidth) {
-                      return SizedBox.shrink();
-                    }
-
-                    return ValueListenableBuilder<bool>(
-                      valueListenable: _isScrollingNotifier,
-                      builder: (context, isScrolling, child) {
-                        return AnimatedOpacity(
-                          opacity: isScrolling ? 1.0 : 0.7,
-                          duration: Duration(milliseconds: 300),
-                          child: Container(
-                            width: constraints.maxWidth,
-                            child: Stack(
-                              children: [
-                                // Background track
-                                Container(
-                                  width: constraints.maxWidth,
-                                  height: 3.h,
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[200],
-                                    borderRadius: BorderRadius.circular(1.5.r),
-                                  ),
-                                ),
-
-                                // Blue scroll thumb
-                                AnimatedBuilder(
-                                  animation: _horizontalScrollController,
-                                  builder: (context, child) {
-                                    final scrollOffset =
-                                        _horizontalScrollController.hasClients
-                                        ? _horizontalScrollController.offset
-                                        : 0.0;
-                                    final maxScrollExtent =
-                                        _horizontalScrollController.hasClients
-                                        ? _horizontalScrollController
-                                              .position
-                                              .maxScrollExtent
-                                        : 1.0;
-
-                                    final thumbWidth =
-                                        (visibleWidth / totalWidth) *
-                                        constraints.maxWidth;
-                                    final thumbPosition = maxScrollExtent > 0
-                                        ? (scrollOffset / maxScrollExtent) *
-                                              (constraints.maxWidth -
-                                                  thumbWidth)
-                                        : 0.0;
-
-                                    return Positioned(
-                                      left: thumbPosition.clamp(
-                                        0.0,
-                                        constraints.maxWidth - thumbWidth,
-                                      ),
-                                      child: Container(
-                                        width: thumbWidth,
-                                        height: 4.h,
-                                        decoration: BoxDecoration(
-                                          color: Colors.blue,
-                                          borderRadius: BorderRadius.circular(
-                                            2.r,
-                                          ),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.blue.withOpacity(
-                                                0.3,
-                                              ),
-                                              blurRadius: 2,
-                                              offset: Offset(0, 1),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    );
-                  },
+                      Icon(
+                        Icons.arrow_drop_down,
+                        size: 20.w,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
           ),
-        ),
-      ],
-    );
-  }
 
-  Widget _buildHeaderCell(String text, double width) {
-    return SizedBox(
-      width: width,
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 8.w),
-        child: Text(
-          text,
-          style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
-        ),
-      ),
-    );
-  }
+          /// CREATE BUTTON
+          ElevatedButton.icon(
+            onPressed:
+            controller.onCreateTicketPressed,
 
-  Widget _buildDataCell(String text, double width) {
-    return SizedBox(
-      width: width,
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 8.w),
-        child: Text(
-          text,
-          style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w400),
-          overflow: TextOverflow.ellipsis,
-          maxLines: 2,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatusCell(String status, Color color, double width) {
-    return SizedBox(
-      width: width,
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(4.r),
-        ),
-        child: Text(
-          status,
-          style: TextStyle(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPriorityCell(String priority, Color color, double width) {
-    return SizedBox(
-      width: width,
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-        decoration: BoxDecoration(
-          // color: color,
-          borderRadius: BorderRadius.circular(4.r),
-        ),
-        child: Text(
-          priority,
-          style: TextStyle(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w600,
-            // color: Colors.white,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActionCell(ManageTicketModel ticket, double width) {
-    return SizedBox(
-      width: width,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          // View Button
-          Container(
-            height: 40.h,
-            width: 40.w,
-            decoration: BoxDecoration(
-              color: Colors.green,
-              borderRadius: BorderRadius.circular(12.r),
+            style: ElevatedButton.styleFrom(
+              backgroundColor:
+              AppTheme.colors.blue,
+              padding: EdgeInsets.symmetric(
+                horizontal: 24.w,
+                vertical: 12.h,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius:
+                BorderRadius.circular(8.r),
+              ),
             ),
-            child: IconButton(
-              onPressed: () => controller.onViewTicket(ticket),
-              icon: Icon(
-                Icons.shortcut_rounded,
-                size: 18.w,
+
+            icon: Icon(
+              Icons.add,
+              size: 20.w,
+              color: Colors.white,
+            ),
+
+            label: Text(
+              'Create Ticket',
+              style: TextStyle(
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w600,
                 color: Colors.white,
               ),
-              padding: EdgeInsets.zero,
-              constraints: BoxConstraints(),
+            ),
+          ),
+        ],
+      );
+    });
+  }
+
+  Widget _buildTicketsTable() {
+
+    return Obx(() {
+
+      /// LOADING
+      if (controller.isLoading.value) {
+
+        // return Center(
+        //   child: Padding(
+        //     padding: EdgeInsets.all(30.h),
+        //     child: CircularProgressIndicator(),
+        //   ),
+        // );
+        return _buildTicketShimmer();
+      }
+
+      /// EMPTY
+      if (controller.filteredTickets.isEmpty) {
+
+        return Center(
+          child: Padding(
+            padding: EdgeInsets.all(30.h),
+            child: Text(
+              "No Tickets Found",
+              style: TextStyle(
+                fontSize: 14.sp,
+              ),
+            ),
+          ),
+        );
+      }
+
+      return ListView.separated(
+
+        shrinkWrap: true,
+
+        physics:
+        NeverScrollableScrollPhysics(),
+
+        itemCount:
+        controller.filteredTickets.length,
+
+        separatorBuilder: (_, __) =>
+            SizedBox(height: 12.h),
+
+        itemBuilder: (context, index) {
+
+          final ticket =
+          controller.filteredTickets[index];
+
+          return Container(
+
+            decoration: BoxDecoration(
+
+              color: Colors.white,
+
+              borderRadius:
+              BorderRadius.circular(12.r),
+
+              border: Border.all(
+                color: Colors.black12,
+              ),
+            ),
+
+            child: Theme(
+
+              data: Theme.of(context).copyWith(
+                dividerColor: Colors.transparent,
+              ),
+
+              child: ExpansionTile(
+
+                tilePadding:
+                EdgeInsets.symmetric(
+                  horizontal: 14.w,
+                  vertical: 8.h,
+                ),
+
+                childrenPadding:
+                EdgeInsets.symmetric(
+                  horizontal: 14.w,
+                  vertical: 12.h,
+                ),
+
+                expandedCrossAxisAlignment:
+                CrossAxisAlignment.start,
+
+                /// ACTION BUTTON
+                leading: (ticket.status?.toLowerCase() == "close" ||
+                    ticket.status?.toLowerCase() == "closed")
+                    ? Container(
+                  height: 42.h,
+                  width: 42.w,
+                  decoration: BoxDecoration(
+                    color: Colors.black,
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                  child: Center(
+                    child: Text(
+                      "Close",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                )
+                    : GestureDetector(
+                  onTap: () => controller.onViewTicket(ticket),
+                  child: Container(
+                    height: 42.h,
+                    width: 42.w,
+                    decoration: BoxDecoration(
+                      color: AppTheme.colors.green,
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                    child: Center(
+                      child: SvgPicture.asset(
+                        AppIcons.ACTION,
+                        width: 18.w,
+                        height: 18.h,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+
+                /// TITLE
+                title: Text(
+
+                  ticket.employeeName ?? "-",
+
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+
+                /// SUBTITLE
+                subtitle: Padding(
+
+                  padding: EdgeInsets.only(top: 4.h),
+
+                  child: Text(
+
+                    ticket.createdAt == null
+                        ? "-"
+                        : DateFormat(
+                      "dd MMM yyyy",
+                    ).format(
+                      ticket.createdAt!,
+                    ),
+
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ),
+
+                /// TRAILING
+                trailing: Column(
+
+                  mainAxisAlignment:
+                  MainAxisAlignment.center,
+
+                  children: [
+
+                    /// STATUS
+                    Container(
+
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10.w,
+                        vertical: 4.h,
+                      ),
+
+                      decoration: BoxDecoration(
+
+                        color:
+                        controller.getStatusColor(
+                          ticket.status,
+                        ),
+
+                        borderRadius:
+                        BorderRadius.circular(20.r),
+                      ),
+
+                      child: Text(
+
+                        ticket.status ?? "-",
+
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+
+                    SizedBox(height: 6.h),
+
+                    /// PRIORITY
+                    Text(
+
+                      ticket.priority ?? "-",
+
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+
+                /// EXPANDED SECTION
+                children: [
+
+                  _buildDetailRow(
+                    "Department",
+                    ticket.department ?? "-",
+                  ),
+
+                  _buildDetailRow(
+                    "Ticket Code",
+                    ticket.ticketCode ?? "-",
+                  ),
+
+                  _buildDetailRow(
+                    "Title",
+                    ticket.title ?? "-",
+                  ),
+
+                  _buildDetailRow(
+                    "Description",
+                    ticket.description ?? "-",
+                  ),
+
+                  _buildDetailRow(
+                    "Created By",
+                    ticket.createdByName ?? "-",
+                  ),
+
+                  _buildDetailRow(
+                    "Branch",
+                    ticket.branchName ?? "-",
+                  ),
+
+                  _buildDetailRow(
+                    "Ticket Department",
+                    ticket.ticketDepartment ?? "-",
+                  ),
+
+                  _buildDetailRow(
+                    "Priority",
+                    ticket.priority ?? "-",
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    });
+  }
+
+  Widget _buildDetailRow(
+      String title,
+      String value,
+      ) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 10.h),
+
+      child: Row(
+        crossAxisAlignment:
+        CrossAxisAlignment.start,
+
+        children: [
+
+          SizedBox(
+            width: 120.w,
+            child: Text(
+              title,
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 13.sp,
+              ),
+            ),
+          ),
+
+          Expanded(
+            child: Text(
+              value.isEmpty ? "-" : value,
+              style: TextStyle(
+                fontSize: 13.sp,
+                color: Colors.black87,
+              ),
             ),
           ),
         ],
@@ -513,134 +556,324 @@ class ManageTicketsScreen extends StatelessWidget {
     );
   }
 
-  double _calculateTotalWidth() {
-    return 80.w + // Action
-        120.w + // Employee
-        100.w + // Date
-        120.w + // Ticket Code
-        100.w + // Status
-        150.w + // Title
-        200.w + // Description
-        100.w + // RO
-        80.w + // New
-        150.w + // Department
-        100.w + // Priority
-        120.w + // Created By
-        120.w + // Created At
-        (16.w * 2); // Padding
+  Widget _buildPagination() {
+
+    return Obx(() {
+
+      final bool hasNext =
+          controller.hasNextPage;
+
+      final bool hasPrevious =
+          controller.hasPreviousPage;
+
+      return Row(
+        mainAxisAlignment:
+        MainAxisAlignment.spaceBetween,
+
+        children: [
+
+          /// PAGE COUNT
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: 16.w,
+              vertical: 8.h,
+            ),
+
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius:
+              BorderRadius.circular(8.r),
+            ),
+
+            child: Text(
+              "${controller.currentPage.value} of ${controller.lastPage.value} Pages",
+
+              style: TextStyle(
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ),
+
+          /// RIGHT SECTION
+          Row(
+            children: [
+
+              /// PAGE TEXT
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: 8.w,
+                  vertical: 8.h,
+                ),
+
+                child: Text(
+                  "Page",
+
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ),
+
+              SizedBox(width: 8.w),
+
+              /// PAGE POPUP
+              PopupMenuButton<String>(
+
+                color: Colors.white,
+
+                offset: Offset(0, 5.h),
+
+                onSelected: (String newValue) {
+
+                  controller.changePage(
+                    int.parse(newValue),
+                  );
+                },
+
+                itemBuilder:
+                    (BuildContext context) {
+
+                  return List.generate(
+                    controller.lastPage.value,
+                        (index) =>
+                        (index + 1).toString(),
+                  ).map((String value) {
+
+                    return PopupMenuItem<String>(
+                      value: value,
+
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 12.h,
+                      ),
+
+                      child: Text(value),
+                    );
+                  }).toList();
+                },
+
+                child: Container(
+
+                  width: 55.w,
+                  height: 38.h,
+
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 10.w,
+                  ),
+
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+
+                    borderRadius:
+                    BorderRadius.circular(8.r),
+
+                    border: Border.all(
+                      color: AppTheme.colors.black
+                          .withOpacity(0.2),
+                    ),
+                  ),
+
+                  child: Row(
+                    mainAxisAlignment:
+                    MainAxisAlignment.spaceBetween,
+
+                    children: [
+
+                      Text(
+                        controller.currentPage.value
+                            .toString(),
+
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+
+                      Icon(
+                        Icons.arrow_drop_down,
+                        size: 20.w,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              SizedBox(width: 16.w),
+
+              /// PREVIOUS BUTTON
+              GestureDetector(
+
+                onTap: hasPrevious
+                    ? controller.previousPage
+                    : null,
+
+                child: Container(
+
+                  padding: EdgeInsets.all(8.w),
+
+                  decoration: BoxDecoration(
+
+                    color: hasPrevious
+                        ? AppTheme.colors.blue
+                        : Colors.grey.shade300,
+
+                    borderRadius:
+                    BorderRadius.circular(8.r),
+
+                    border: Border.all(
+                      color: hasPrevious
+                          ? AppTheme.colors.blue
+                          : Colors.grey.shade400,
+                      width: 1.w,
+                    ),
+                  ),
+
+                  child: Icon(
+                    Icons.arrow_back,
+
+                    size: 20.w,
+
+                    color: hasPrevious
+                        ? Colors.white
+                        : Colors.grey,
+                  ),
+                ),
+              ),
+
+              SizedBox(width: 8.w),
+
+              /// NEXT BUTTON
+              GestureDetector(
+
+                onTap: hasNext
+                    ? controller.nextPage
+                    : null,
+
+                child: Container(
+
+                  padding: EdgeInsets.all(8.w),
+
+                  decoration: BoxDecoration(
+
+                    color: hasNext
+                        ? AppTheme.colors.blue
+                        : Colors.grey.shade300,
+
+                    borderRadius:
+                    BorderRadius.circular(8.r),
+
+                    border: Border.all(
+                      color: hasNext
+                          ? AppTheme.colors.blue
+                          : Colors.grey.shade400,
+                      width: 1.w,
+                    ),
+                  ),
+
+                  child: Icon(
+                    Icons.arrow_forward,
+
+                    size: 20.w,
+
+                    color: hasNext
+                        ? Colors.white
+                        : Colors.grey,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+    });
   }
 
-  Widget _buildPagination() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        // Text: "1 of 13 Pages"
-        Container(
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8.r),
-          ),
-          child: Obx(
-            () => Text(
-              "1 of ${(controller.filteredTickets.length / 10).ceil()} Pages",
-              style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w400),
+  Widget _buildTicketShimmer() {
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: 6,
+      separatorBuilder: (_, __) => SizedBox(height: 12.h),
+      itemBuilder: (context, index) {
+        return Shimmer.fromColors(
+          baseColor: Colors.grey.shade300,
+          highlightColor: Colors.grey.shade100,
+          child: Container(
+            padding: EdgeInsets.all(14.w),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12.r),
             ),
-          ),
-        ),
-
-        // Right side: Page selector and arrows
-        Row(
-          children: [
-            // "Page" text
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h),
-              child: Text(
-                "Page",
-                style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w400),
-              ),
-            ),
-            SizedBox(width: 8.w),
-
-            // Page number dropdown/input
-            Container(
-              width: 45.w,
-              height: 35.h,
-              padding: EdgeInsets.only(left: 8.w),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(4.r),
-                border: Border.all(
-                  color: AppTheme.colors.black.withOpacity(0.2),
-                  width: 1.w,
-                ),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: "1",
-                  icon: Icon(Icons.arrow_drop_down, size: 20.w),
-                  isExpanded: true,
-                  items: List.generate(10, (index) => (index + 1).toString())
-                      .map((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(
-                            value,
-                            style: TextStyle(
-                              fontSize: 14.sp,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                        );
-                      })
-                      .toList(),
-                  onChanged: (String? newValue) {
-                    // Handle page change
-                  },
-                ),
-              ),
-            ),
-            SizedBox(width: 16.w),
-
-            // Back arrow
-            GestureDetector(
-              onTap: () {
-                // Handle previous page
-              },
-              child: Container(
-                padding: EdgeInsets.all(8.w),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border.all(
-                    color: AppTheme.colors.black.withOpacity(0.2),
-                    width: 1.w,
+            child: Row(
+              children: [
+                Container(
+                  height: 42.h,
+                  width: 42.w,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12.r),
                   ),
                 ),
-                child: Icon(Icons.arrow_back, size: 20.w),
-              ),
-            ),
-            SizedBox(width: 8.w),
 
-            // Forward arrow
-            GestureDetector(
-              onTap: () {
-                // Handle next page
-              },
-              child: Container(
-                padding: EdgeInsets.all(8.w),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border.all(
-                    color: AppTheme.colors.black.withOpacity(0.2),
-                    width: 1.w,
+                SizedBox(width: 12.w),
+
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        height: 14.h,
+                        width: 140.w,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(6.r),
+                        ),
+                      ),
+
+                      SizedBox(height: 10.h),
+
+                      Container(
+                        height: 12.h,
+                        width: 90.w,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(6.r),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                child: Icon(Icons.arrow_forward, size: 20.w),
-              ),
+
+                Column(
+                  children: [
+                    Container(
+                      height: 24.h,
+                      width: 60.w,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20.r),
+                      ),
+                    ),
+
+                    SizedBox(height: 8.h),
+
+                    Container(
+                      height: 12.h,
+                      width: 40.w,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(6.r),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
-        ),
-      ],
+          ),
+        );
+      },
     );
   }
 }

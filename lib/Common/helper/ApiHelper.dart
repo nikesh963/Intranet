@@ -10,7 +10,7 @@ import '../dataBaseHelper/SharedPrefHelper.dart';
 class ApiHelper {
   final Dio _dio;
   // static String get BASEURL => dotenv.env['BASE_URL'] ?? "";
-  static String get BASEURL => "https://intranet.techinfini.in";
+  static String get BASEURL => "https://intranet.techappsworld.com/api";
   static String get REFRESH_URL => dotenv.env['REFRESH_URL'] ?? "";
 
   ApiHelper()
@@ -201,4 +201,6 @@ class ApiHelper {
 
     return File(filePath);
   }
+
+
 }
