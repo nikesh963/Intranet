@@ -23,6 +23,8 @@ class AppIcons {
   static const String ATTENDANCE = "assets/icons/Attendance.svg";
   static const String MANAGE = "assets/icons/Manage.svg";
   static const String LEAVE = "assets/icons/Leave.svg";
+  static const String ACTION = "assets/icons/reply.svg";
+  static const String UPLOAD = "assets/icons/upload.svg";
   static const String PROFILE = "assets/icons/Profile.svg";
   static const String NOTIFICATION = "assets/icons/ic-noti.svg";
   //static const String FAVOURITIE = "assets/icons/ic-favourite.svg";

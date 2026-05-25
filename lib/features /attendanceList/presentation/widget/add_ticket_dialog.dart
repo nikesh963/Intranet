@@ -3,16 +3,19 @@ import 'dart:ui';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 
 import '../../../../Common/CommonSnackBar.dart';
+import '../../../../core/constants/icons.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../model/attendance_model.dart';
+import '../controller/attendance_controller.dart';
 
 class AddTicketDialog extends StatefulWidget {
-  final String date;
+  final AttendanceElement record;
 
-  const AddTicketDialog({Key? key, required this.date}) : super(key: key);
-
+  const AddTicketDialog({Key? key, required this.record,}) : super(key: key);
   @override
   State<AddTicketDialog> createState() => _AddTicketDialogState();
 }
@@ -20,15 +23,31 @@ class AddTicketDialog extends StatefulWidget {
 class _AddTicketDialogState extends State<AddTicketDialog> {
   final TextEditingController _subjectController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
-  String? _selectedPriority;
-  String? _selectedDepartment;
+  final AttendanceController controller =
+  Get.find<AttendanceController>();
+  // String? _selectedPriority;
+  // String? _selectedDepartment;
   PlatformFile? _selectedFile;
+// 👇 Preselected values
+  String? _selectedPriority = 'Medium';
+  String? _selectedDepartment = 'HR Department';
 
   @override
   void initState() {
+
     super.initState();
-    // Set the initial value for description textfield
-    _descriptionController.text = 'Hello\nKindly Change The Attendance Status As Per Below Details:\nDate : ${widget.date}\nCurrent Status : Absent\nNew Status Required :\nReason:';
+
+    _subjectController.text =
+    "Attendance ${widget.record.employeeName ?? ""} : "
+        "${widget.record.date?.toString().split(' ')[0] ?? ""}";
+
+    _descriptionController.text =
+    'Hello\n\n'
+        'Kindly Change The Attendance Status As Per Below Details:\n\n'
+        'Date : ${widget.record.date?.toString().split(' ')[0] ?? ""}\n'
+        'Current Status : ${widget.record.status?.name ?? "Absent"}\n'
+        'New Status Required :\n'
+        'Reason :';
   }
   // Priority options
   final List<String> _priorityOptions = [
@@ -80,6 +99,7 @@ class _AddTicketDialogState extends State<AddTicketDialog> {
                 TextField(
                   controller: _subjectController,
                   decoration: InputDecoration(
+
                     labelText: 'Subject',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8.r),
@@ -87,52 +107,108 @@ class _AddTicketDialogState extends State<AddTicketDialog> {
                   ),
                 ),
                 SizedBox(height: 16.h),
-
-                // Priority Dropdown
-                DropdownButtonFormField<String>(
-                  decoration: InputDecoration(
-                    labelText: 'Priority',
-                    border: OutlineInputBorder(
+                PopupMenuButton<String>(
+                  color: Colors.white,
+                  offset: Offset(0, 5.h), // Space between button and menu
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade400),
                       borderRadius: BorderRadius.circular(8.r),
                     ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(_selectedPriority ?? 'Select Priority'),
+                        Icon(Icons.arrow_drop_down),
+                      ],
+                    ),
                   ),
-                  value: _selectedPriority,
-                  items: _priorityOptions.map((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
-                  onChanged: (String? newValue) {
+
+                  // Control the menu appearance
+                  constraints: BoxConstraints(
+
+                    minWidth: 150.w,
+                    maxWidth: 300.w,
+                    maxHeight: 300.h,
+                  ),
+
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+
+                  elevation: 8,
+
+                  // This adds padding/margin around the entire dropdown content
+                  menuPadding: EdgeInsets.all(12.w), // Creates space around the items
+
+                  itemBuilder: (BuildContext context) {
+                    return _priorityOptions.map((String value) {
+                      return PopupMenuItem<String>(
+
+                        value: value,
+                        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                        child: Text(value),
+                      );
+                    }).toList();
+                  },
+
+                  onSelected: (String newValue) {
                     setState(() {
                       _selectedPriority = newValue;
                     });
                   },
-                  hint: Text('Select Priority'),
                 ),
                 SizedBox(height: 16.h),
-
-                // Department Dropdown
-                DropdownButtonFormField<String>(
-                  decoration: InputDecoration(
-                    labelText: 'Department',
-                    border: OutlineInputBorder(
+                PopupMenuButton<String>(
+                  color: Colors.white,
+                  offset: Offset(0, 5.h), // Space between button and menu
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade400),
                       borderRadius: BorderRadius.circular(8.r),
                     ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(_selectedDepartment ?? 'Select Department'),
+                        Icon(Icons.arrow_drop_down),
+                      ],
+                    ),
                   ),
-                  value: _selectedDepartment,
-                  items: _departmentOptions.map((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
-                  onChanged: (String? newValue) {
+
+                  // Control the menu appearance
+                  constraints: BoxConstraints(
+                    minWidth: 150.w,
+                    maxWidth: 300.w,
+                    maxHeight: 300.h,
+                  ),
+
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+
+                  elevation: 8,
+
+                  // This adds padding/margin around the entire dropdown content
+                  menuPadding: EdgeInsets.all(12.w), // Creates space around the items
+
+                  itemBuilder: (BuildContext context) {
+                    return _departmentOptions.map((String value) {
+                      return PopupMenuItem<String>(
+                        value: value,
+                        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                        child: Text(value),
+                      );
+                    }).toList();
+                  },
+
+                  onSelected: (String newValue) {
                     setState(() {
                       _selectedDepartment = newValue;
                     });
                   },
-                  hint: Text('Select Department'),
                 ),
                 SizedBox(height: 16.h),
 
@@ -186,10 +262,11 @@ class _AddTicketDialogState extends State<AddTicketDialog> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(
-                                Icons.attach_file,
-                                size: 20.w,
-                                color: _selectedFile != null ? AppTheme.colors.blue : Colors.grey,
+                              SvgPicture.asset(
+                                AppIcons.UPLOAD, // 👈 your upload SVG path
+                                width: 20.w,
+                                height: 20.w,
+                                color:   AppTheme.colors.blue,
                               ),
                               SizedBox(width: 8.w),
                               Text(
@@ -213,38 +290,19 @@ class _AddTicketDialogState extends State<AddTicketDialog> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    // Cancel Button
-                    TextButton(
-                      onPressed: () {
-                        Get.back();
-                      },
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 24.w,
-                          vertical: 12.h,
-                        ),
-                      ),
-                      child: Text(
-                        'Cancel',
-                        style: TextStyle(fontSize: 14.sp),
-                      ),
-                    ),
-                    SizedBox(width: 12.w),
-
                     // Create Button
                     ElevatedButton(
                       onPressed: () async {
-                        // Handle create ticket logic
+
                         if (_validateForm()) {
-                         await _createTicket();
-                           // Get.back();
-                         Navigator.of(context).pop();
+
+                          await _createTicket();
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
+                        backgroundColor: AppTheme.colors.blue,
                         padding: EdgeInsets.symmetric(
-                          horizontal: 24.w,
+                          horizontal: 44.w,
                           vertical: 12.h,
                         ),
                         shape: RoundedRectangleBorder(
@@ -256,6 +314,29 @@ class _AddTicketDialogState extends State<AddTicketDialog> {
                         style: TextStyle(
                           fontSize: 14.sp,
                           color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 10.w,),
+                    ElevatedButton(
+                      onPressed: () async {
+                        Get.back();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.colors.white,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 44.w,
+                          vertical: 12.h,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                      ),
+                      child: Text(
+                        'Cancel',
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          color: Colors.black,
                         ),
                       ),
                     ),
@@ -284,15 +365,74 @@ class _AddTicketDialogState extends State<AddTicketDialog> {
     }
     return true;
   }
+  String getPriorityKey(String value) {
+
+    switch (value) {
+
+      case "Low":
+        return "low";
+
+      case "Medium":
+        return "medium";
+
+      case "High":
+        return "high";
+
+      case "Critical":
+        return "critical";
+
+      default:
+        return "medium";
+    }
+  }
+  String getDepartmentKey(String value) {
+
+    switch (value) {
+
+      case "HR Department":
+        return "hr";
+
+      case "Hardware and IT Support":
+        return "hardware";
+
+      case "Reporting Officer":
+        return "reporting_officer";
+
+      case "Software IT Support":
+        return "software";
+
+      default:
+        return "hr";
+    }
+  }
 
   Future<void> _createTicket() async {
 
-   SnackBarService.showSuccessSnackBar(
-      'Ticket created successfully for ${widget.date}',
-    );
-   await Future.delayed(Duration(milliseconds: 500));
-  }
+    final bool isSuccess =
+    await controller.createAttendanceTicket(
 
+      title: _subjectController.text.trim(),
+
+      priority: getPriorityKey(
+        _selectedPriority!,
+      ),
+
+      department: getDepartmentKey(
+        _selectedDepartment!,
+      ),
+
+      description:
+      _descriptionController.text.trim(),
+
+      attendanceId: widget.record.id ?? 0,
+
+      file: _selectedFile,
+    );
+
+    debugPrint(
+      "CREATE TICKET SUCCESS : $isSuccess",
+    );
+  }
   @override
   void dispose() {
     _subjectController.dispose();

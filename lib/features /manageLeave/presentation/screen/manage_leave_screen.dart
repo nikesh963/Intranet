@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:shimmer/shimmer.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widget/app_bar/custom_app_bar.dart';
@@ -13,11 +14,12 @@ class ManageLeaveScreen extends StatelessWidget {
   ManageLeaveScreen({super.key});
 
   final ManageLeaveController controller = Get.put(ManageLeaveController());
-  final ScrollController _horizontalScrollController = ScrollController();
-  final ValueNotifier<bool> _isScrollingNotifier = ValueNotifier<bool>(false);
 
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance?.addPostFrameCallback((_) {
+      controller.  getLeaves(page: 1);
+    });
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -33,8 +35,8 @@ class ManageLeaveScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Search Section
-                  _buildSearchSection(),
-                  SizedBox(height: 24.h),
+                  // _buildSearchSection(),
+                  // SizedBox(height: 24.h),
                   // Create Ticket Button
                   _buildCreateTicketButton(),
                   SizedBox(height: 24.h),
@@ -103,366 +105,336 @@ class ManageLeaveScreen extends StatelessWidget {
   }
 
   Widget _buildCreateTicketButton() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        // "Page" text
-        Row(
-          children: [
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h),
-              child: Text(
-                "Page",
-                style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w400),
-              ),
-            ),
+    return Obx(() {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
 
-            SizedBox(width: 8.w),
-
-            // Page number dropdown/input
-            Container(
-              width: 45.w,
-              height: 35.h,
-              padding: EdgeInsets.only(left: 8.w),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(4.r),
-                border: Border.all(
-                  color: AppTheme.colors.black.withOpacity(0.2),
-                  width: 1.w,
+          /// PAGE SELECTOR
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: 8.w,
+                  vertical: 8.h,
+                ),
+                child: Text(
+                  "Page",
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w400,
+                  ),
                 ),
               ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: "1",
-                  icon: Icon(Icons.arrow_drop_down, size: 20.w),
-                  isExpanded: true,
-                  items: List.generate(10, (index) => (index + 1).toString()).map((
-                      String value,
-                      ) {
-                    return DropdownMenuItem<String>(
+
+              SizedBox(width: 8.w),
+
+              PopupMenuButton<String>(
+                color: Colors.white,
+                offset: Offset(0, 5.h),
+
+                onSelected: (String newValue) {
+                  controller.changePage(
+                    int.parse(newValue),
+                  );
+                },
+
+                itemBuilder: (BuildContext context) {
+                  return List.generate(
+                    controller.lastPage.value,
+                        (index) => (index + 1).toString(),
+                  ).map((String value) {
+                    return PopupMenuItem<String>(
                       value: value,
-                      child: Text(
-                        value,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 12.h,
+                      ),
+                      child: Text(value),
+                    );
+                  }).toList();
+                },
+
+                child: Container(
+                  width: 55.w,
+                  height: 38.h,
+                  padding: EdgeInsets.symmetric(horizontal: 10.w),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8.r),
+                    border: Border.all(
+                      color: AppTheme.colors.black.withOpacity(0.2),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment:
+                    MainAxisAlignment.spaceBetween,
+                    children: [
+
+                      Text(
+                        controller.currentPage.value.toString(),
                         style: TextStyle(
                           fontSize: 14.sp,
-                          fontWeight: FontWeight.w400,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                    );
-                  }).toList(),
-                  onChanged: (String? newValue) {
-                    // Handle page change
-                  },
-                ),
-              ),
-            ),
-          ],
-        ),
-        ElevatedButton.icon(
-          onPressed: controller.onCreateTicketPressed,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.colors.blue,
-            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8.r),
-            ),
-          ),
-          icon: Icon(Icons.add, size: 20.w, color: Colors.white),
-          label: Text(
-            'Create Leave',
-            style: TextStyle(
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 
-  Widget _buildTicketsTable() {
-    // Create a ScrollController for the horizontal scrolling
-    final ScrollController _horizontalScrollController = ScrollController();
-    final ValueNotifier<bool> _isScrollingNotifier = ValueNotifier<bool>(false);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8.r),
-          ),
-          child: Column(
-            children: [
-              NotificationListener<ScrollNotification>(
-                onNotification: (notification) {
-                  if (notification is ScrollStartNotification ||
-                      notification is ScrollUpdateNotification) {
-                    _isScrollingNotifier.value = true;
-                  } else if (notification is ScrollEndNotification) {
-                    Future.delayed(Duration(milliseconds: 500), () {
-                      _isScrollingNotifier.value = false;
-                    });
-                  }
-                  return false;
-                },
-                child: Obx(() {
-                  return SingleChildScrollView(
-                    controller: _horizontalScrollController,
-                    scrollDirection: Axis.horizontal,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Table Header
-                        Container(
-                          width: _calculateTotalWidth(),
-                          padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
-                          decoration: BoxDecoration(
-                            color: AppTheme.colors.gray,
-                            borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(8.r),
-                              topRight: Radius.circular(8.r),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              _buildHeaderCell("Employee", 120.w),
-                              _buildHeaderCell("RO", 80.w),
-                              _buildHeaderCell("Leave Type", 100.w),
-                              _buildHeaderCell("Applied On", 100.w),
-                              _buildHeaderCell("Start Date", 100.w),
-                              _buildHeaderCell("End Date", 100.w),
-                              _buildHeaderCell("Total Days", 100.w),
-                              _buildHeaderCell("Status", 100.w),
-                              _buildHeaderCell("Last Updated By", 130.w),
-                            ],
-                          ),
-                        ),
-
-                        // Table Body
-                        Column(
-                          children: controller.leaveTickets.asMap().entries.map((entry) {
-                            final index = entry.key;
-                            final ticket = entry.value;
-
-                            return Container(
-                              width: _calculateTotalWidth(),
-                              padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
-                              decoration: BoxDecoration(
-                                border: Border(
-                                  bottom: index == controller.leaveTickets.length - 1
-                                      ? BorderSide.none
-                                      : BorderSide(
-                                    color: AppTheme.colors.gray,
-                                    width: 1,
-                                  ),
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  _buildDataCell(ticket.employee, 120.w),
-                                  _buildDataCell(ticket.ro, 80.w),
-                                  _buildLeaveTypeCell(ticket.leaveType, 100.w),
-                                  _buildDataCell(ticket.appliedOn, 100.w),
-                                  _buildDataCell(ticket.startDate, 100.w),
-                                  _buildDataCell(ticket.endDate, 100.w),
-                                  _buildTotalDaysCell(ticket.totalDays, 100.w),
-                                  _buildStatusCell(ticket.status, 100.w),
-                                  _buildDataCell(ticket.lastUpdatedBy, 130.w),
-                                ],
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-              ),
-
-              // Blue Scroll Indicator at the bottom
-              Container(
-                height: 6.h,
-                margin: EdgeInsets.symmetric(vertical: 8.h),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final totalWidth = _calculateTotalWidth();
-                    final visibleWidth = MediaQuery.of(context).size.width - 32.w; // Screen width minus padding
-
-                    // Only show scroll indicator if content is wider than screen
-                    if (totalWidth <= visibleWidth) {
-                      return SizedBox.shrink();
-                    }
-
-                    return ValueListenableBuilder<bool>(
-                      valueListenable: _isScrollingNotifier,
-                      builder: (context, isScrolling, child) {
-                        return AnimatedOpacity(
-                          opacity: isScrolling ? 1.0 : 0.7,
-                          duration: Duration(milliseconds: 300),
-                          child: Container(
-                            width: constraints.maxWidth,
-                            child: Stack(
-                              children: [
-                                // Background track
-                                Container(
-                                  width: constraints.maxWidth,
-                                  height: 3.h,
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[200],
-                                    borderRadius: BorderRadius.circular(1.5.r),
-                                  ),
-                                ),
-
-                                // Blue scroll thumb
-                                AnimatedBuilder(
-                                  animation: _horizontalScrollController,
-                                  builder: (context, child) {
-                                    final scrollOffset = _horizontalScrollController.hasClients
-                                        ? _horizontalScrollController.offset
-                                        : 0.0;
-                                    final maxScrollExtent = _horizontalScrollController.hasClients
-                                        ? _horizontalScrollController.position.maxScrollExtent
-                                        : 1.0;
-
-                                    final thumbWidth = (visibleWidth / totalWidth) * constraints.maxWidth;
-                                    final thumbPosition = maxScrollExtent > 0
-                                        ? (scrollOffset / maxScrollExtent) * (constraints.maxWidth - thumbWidth)
-                                        : 0.0;
-
-                                    return Positioned(
-                                      left: thumbPosition.clamp(0.0, constraints.maxWidth - thumbWidth),
-                                      child: Container(
-                                        width: thumbWidth,
-                                        height: 4.h,
-                                        decoration: BoxDecoration(
-                                          color: Colors.blue, // Blue color
-                                          borderRadius: BorderRadius.circular(2.r),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.blue.withOpacity(0.3),
-                                              blurRadius: 2,
-                                              offset: Offset(0, 1),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    );
-                  },
+                      Icon(
+                        Icons.arrow_drop_down,
+                        size: 20.w,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
           ),
-        ),
-      ],
-    );
-  }
-  Widget _buildHeaderCell(String text, double width) {
-    return SizedBox(
-      width: width,
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 8.w),
-        child: Text(
-          text,
-          style: TextStyle(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w600,
+
+          /// CREATE BUTTON
+          ElevatedButton.icon(
+            onPressed: controller.onCreateTicketPressed,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.colors.blue,
+              padding: EdgeInsets.symmetric(
+                horizontal: 24.w,
+                vertical: 12.h,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+            ),
+            icon: Icon(
+              Icons.add,
+              size: 20.w,
+              color: Colors.white,
+            ),
+            label: Text(
+              'Create Leave',
+              style: TextStyle(
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
           ),
-        ),
+        ],
+      );
+    });
+  }
+
+  Widget _buildTicketsTable() {
+    return Obx(() {
+
+      if (controller.isLoading.value) {
+        // return const Center(
+        //   child: CircularProgressIndicator(),
+        // );
+        return _buildLeaveShimmer();
+      }
+
+      if (controller.leaveTickets.isEmpty) {
+        return Center(
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 40.h),
+            child: Text(
+              "No Leaves Found",
+              style: TextStyle(
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        );
+      }
+
+      return ListView.separated(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: controller.leaveTickets.length,
+        separatorBuilder: (_, __) => SizedBox(height: 12.h),
+        itemBuilder: (context, index) {
+
+          final ticket = controller.leaveTickets[index];
+
+          return Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(
+                color: Colors.black.withOpacity(0.08),
+              ),
+            ),
+            child: Theme(
+              data: Theme.of(context).copyWith(
+                dividerColor: Colors.transparent,
+              ),
+              child: ExpansionTile(
+                tilePadding: EdgeInsets.symmetric(
+                  horizontal: 14.w,
+                  vertical: 6.h,
+                ),
+                childrenPadding: EdgeInsets.symmetric(
+                  horizontal: 14.w,
+                  vertical: 12.h,
+                ),
+                expandedCrossAxisAlignment:
+                CrossAxisAlignment.start,
+
+                leading: CircleAvatar(
+                  radius: 18.r,
+                  backgroundColor:
+                  AppTheme.colors.blue.withOpacity(0.1),
+                  child: Text(
+                    ticket.employeeName != null &&
+                        ticket.employeeName!.isNotEmpty
+                        ? ticket.employeeName![0].toUpperCase()
+                        : "?",
+                    style: TextStyle(
+                      color: AppTheme.colors.blue,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+
+                title: Text(
+                  ticket.employeeName ?? "-",
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+
+                subtitle: Padding(
+                  padding: EdgeInsets.only(top: 4.h),
+                  child: Text(
+                    ticket.leaveTypeName ?? "-",
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ),
+
+                trailing: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+
+                    Text(
+                      "${ticket.totalLeaveDays ?? "0"} Days",
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+
+                    SizedBox(height: 6.h),
+
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10.w,
+                        vertical: 4.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _getStatusColor(
+                          ticket.status ?? "",
+                        ),
+                        borderRadius:
+                        BorderRadius.circular(20.r),
+                      ),
+                      child: Text(
+                        ticket.status ?? "-",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                children: [
+
+                  _buildDetailRow(
+                    "Department",
+                    ticket.department ?? "-",
+                  ),
+
+                  _buildDetailRow(
+                    "Branch",
+                    ticket.branchName ?? "-",
+                  ),
+
+                  _buildDetailRow(
+                    "Applied On",
+                    controller.formatDate(ticket.appliedOn),
+                  ),
+
+                  _buildDetailRow(
+                    "Start Date",
+                    controller.formatDate(ticket.startDate),
+                  ),
+
+                  _buildDetailRow(
+                    "End Date",
+                    controller.formatDate(ticket.endDate),
+                  ),
+
+                  _buildDetailRow(
+                    "Created By",
+                    ticket.createdByName ?? "-",
+                  ),
+
+                  _buildDetailRow(
+                    "Reason",
+                    ticket.leaveReason ?? "-",
+                  ),
+
+                  _buildDetailRow(
+                    "Remark",
+                    ticket.remark ?? "-",
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    });
+  }
+  Widget _buildDetailRow(String title, String value) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 10.h),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+
+          SizedBox(
+            width: 120.w,
+            child: Text(
+              title,
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 13.sp,
+              ),
+            ),
+          ),
+
+          Expanded(
+            child: Text(
+              value.isEmpty ? "-" : value,
+              style: TextStyle(
+                fontSize: 13.sp,
+                color: Colors.black87,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildDataCell(String text, double width) {
-    return SizedBox(
-      width: width,
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 8.w),
-        child: Text(
-          text,
-          style: TextStyle(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w400,
-          ),
-          overflow: TextOverflow.ellipsis,
-        ),
-      ),
-    );
-  }
 
-  Widget _buildLeaveTypeCell(String text, double width) {
-    return SizedBox(
-      width: width,
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(4.r),
-        ),
-        child: Text(
-          text,
-          style: TextStyle(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w500,
-          ),
-          overflow: TextOverflow.ellipsis,
-          textAlign: TextAlign.center,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTotalDaysCell(String text, double width) {
-    return SizedBox(
-      width: width,
-      child: Center(
-        child: Text(
-          text,
-          style: TextStyle(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w400,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatusCell(String text, double width) {
-    return SizedBox(
-      width: width,
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 4.h),
-        decoration: BoxDecoration(
-          color: _getStatusColor(text),
-          borderRadius: BorderRadius.circular(4.r),
-        ),
-        child: Text(
-          text,
-          style: TextStyle(
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.colors.white
-          ),
-          overflow: TextOverflow.ellipsis,
-          textAlign: TextAlign.center,
-        ),
-      ),
-    );
-  }
-
-  double _calculateTotalWidth() {
-    return 120.w + 80.w + 100.w + 100.w + 100.w + 100.w + 100.w + 100.w + 130.w + (16.w * 2);
-  }
 // Helper methods for styling
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
@@ -479,135 +451,287 @@ class ManageLeaveScreen extends StatelessWidget {
 
 
   Widget _buildPagination() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        // Text: "1 of 13 Pages"
-        Container(
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8.r),
-          ),
-          child: Text(
-            "1 of 13 Pages",
-            style: TextStyle(
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w400,
-              // color: AppTheme.colors.textSecondary,
-            ),
-          ),
-        ),
+    return Obx(() {
 
-        // Right side: Page selector and arrows
-        Row(
-          children: [
-            // "Page" text
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h),
-              child: Text(
-                "Page",
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w400,
-                  // color: AppTheme.colors.textSecondary,
-                ),
+      final bool hasNext = controller.hasNextPage;
+      final bool hasPrevious = controller.hasPreviousPage;
+
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+
+          /// PAGE COUNT
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: 16.w,
+              vertical: 8.h,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8.r),
+            ),
+            child: Text(
+              "${controller.currentPage.value} of ${controller.lastPage.value} Pages",
+              style: TextStyle(
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w400,
               ),
             ),
-            SizedBox(width: 8.w),
+          ),
 
-            // Page number dropdown/input
-            Container(
-              width: 45.w,
-              height: 35.h,
-              padding: EdgeInsets.only(left: 8.w),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(4.r),
-                border: Border.all(
-                  color: AppTheme.colors.black.withOpacity(0.2),
-                  width: 1.w,
+          /// RIGHT SECTION
+          Row(
+            children: [
+
+              /// PAGE TEXT
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: 8.w,
+                  vertical: 8.h,
                 ),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: "1",
-                  icon: Icon(
-                    Icons.arrow_drop_down,
-                    // size: 20.w,
-                    // color: AppTheme.colors.textSecondary,
+                child: Text(
+                  "Page",
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w400,
                   ),
-                  isExpanded: true,
-                  items: List.generate(2, (index) => (index + 1).toString())
-                      .map((String value) {
-                    return DropdownMenuItem<String>(
+                ),
+              ),
+
+              SizedBox(width: 8.w),
+
+              /// PAGE POPUP
+              PopupMenuButton<String>(
+                color: Colors.white,
+                offset: Offset(0, 5.h),
+
+                onSelected: (String newValue) {
+                  controller.changePage(
+                    int.parse(newValue),
+                  );
+                },
+
+                itemBuilder: (BuildContext context) {
+                  return List.generate(
+                    controller.lastPage.value,
+                        (index) => (index + 1).toString(),
+                  ).map((String value) {
+                    return PopupMenuItem<String>(
                       value: value,
-                      child: Text(
-                        value,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 12.h,
+                      ),
+                      child: Text(value),
+                    );
+                  }).toList();
+                },
+
+                child: Container(
+                  width: 55.w,
+                  height: 38.h,
+                  padding: EdgeInsets.symmetric(horizontal: 10.w),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8.r),
+                    border: Border.all(
+                      color: AppTheme.colors.black.withOpacity(0.2),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment:
+                    MainAxisAlignment.spaceBetween,
+                    children: [
+
+                      Text(
+                        controller.currentPage.value.toString(),
                         style: TextStyle(
                           fontSize: 14.sp,
-                          fontWeight: FontWeight.w400,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                    );
-                  }).toList(),
-                  onChanged: (String? newValue) {
-                    // Handle page change
-                  },
-                ),
-              ),
-            ),
-            SizedBox(width: 16.w),
 
-            // Back arrow
-            GestureDetector(
-              onTap: () {
-                // Handle previous page
-              },
-              child: Container(
-                padding: EdgeInsets.all(8.w),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  // shape: BoxShape.circle,
-                  border: Border.all(
-                    color: AppTheme.colors.black.withOpacity(0.2),
-                    width: 1.w,
+                      Icon(
+                        Icons.arrow_drop_down,
+                        size: 20.w,
+                      ),
+                    ],
                   ),
                 ),
-                child: Icon(
-                  Icons.arrow_back,
-                  size: 20.w,
-                  // color: AppTheme.colors.textSecondary,
-                ),
               ),
-            ),
-            SizedBox(width: 8.w),
 
-            // Forward arrow
-            GestureDetector(
-              onTap: () {
-                // Handle next page
-              },
-              child: Container(
-                padding: EdgeInsets.all(8.w),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  // shape: BoxShape.circle,
-                  border: Border.all(
-                    color: AppTheme.colors.black.withOpacity(0.2),
-                    width: 1.w,
+              SizedBox(width: 16.w),
+
+              /// PREVIOUS BUTTON
+              GestureDetector(
+                onTap: hasPrevious
+                    ? controller.previousPage
+                    : null,
+                child: Container(
+                  padding: EdgeInsets.all(8.w),
+                  decoration: BoxDecoration(
+                    color: hasPrevious
+                        ? AppTheme.colors.blue
+                        : Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(8.r),
+                    border: Border.all(
+                      color: hasPrevious
+                          ? AppTheme.colors.blue
+                          : Colors.grey.shade400,
+                      width: 1.w,
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.arrow_back,
+                    size: 20.w,
+                    color: hasPrevious
+                        ? Colors.white
+                        : Colors.grey,
                   ),
                 ),
-                child: Icon(
-                  Icons.arrow_forward,
-                  size: 20.w,
-                  // color: AppTheme.colors.textSecondary,
+              ),
+
+              SizedBox(width: 8.w),
+
+              /// NEXT BUTTON
+              GestureDetector(
+                onTap: hasNext
+                    ? controller.nextPage
+                    : null,
+                child: Container(
+                  padding: EdgeInsets.all(8.w),
+                  decoration: BoxDecoration(
+                    color: hasNext
+                        ? AppTheme.colors.blue
+                        : Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(8.r),
+                    border: Border.all(
+                      color: hasNext
+                          ? AppTheme.colors.blue
+                          : Colors.grey.shade400,
+                      width: 1.w,
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.arrow_forward,
+                    size: 20.w,
+                    color: hasNext
+                        ? Colors.white
+                        : Colors.grey,
+                  ),
                 ),
               ),
+            ],
+          ),
+        ],
+      );
+    });
+  }
+
+  Widget _buildLeaveShimmer() {
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: 6,
+      separatorBuilder: (_, __) => SizedBox(height: 12.h),
+
+      itemBuilder: (context, index) {
+
+        return Shimmer.fromColors(
+
+          baseColor: Colors.grey.shade300,
+          highlightColor: Colors.grey.shade100,
+
+          child: Container(
+
+            padding: EdgeInsets.all(14.w),
+
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12.r),
             ),
-          ],
-        ),
-      ],
+
+            child: Row(
+              children: [
+
+                /// AVATAR
+                CircleAvatar(
+                  radius: 20.r,
+                  backgroundColor: Colors.white,
+                ),
+
+                SizedBox(width: 12.w),
+
+                /// TITLE + SUBTITLE
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment:
+                    CrossAxisAlignment.start,
+
+                    children: [
+
+                      Container(
+                        height: 14.h,
+                        width: 140.w,
+
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius:
+                          BorderRadius.circular(6.r),
+                        ),
+                      ),
+
+                      SizedBox(height: 10.h),
+
+                      Container(
+                        height: 12.h,
+                        width: 90.w,
+
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius:
+                          BorderRadius.circular(6.r),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                /// RIGHT SIDE
+                Column(
+                  children: [
+
+                    Container(
+                      height: 12.h,
+                      width: 50.w,
+
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius:
+                        BorderRadius.circular(6.r),
+                      ),
+                    ),
+
+                    SizedBox(height: 8.h),
+
+                    Container(
+                      height: 24.h,
+                      width: 70.w,
+
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius:
+                        BorderRadius.circular(20.r),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
+
 }

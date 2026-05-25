@@ -36,7 +36,7 @@ class LoginScreen extends StatelessWidget {
               // Title
               Center(
                 child: Text(
-                  'Get Started now',
+                  'Intranet',
                   style: TextStyle(
                     fontSize: 32.sp,
                     fontWeight: FontWeight.bold,
@@ -108,45 +108,71 @@ class LoginScreen extends StatelessWidget {
               SizedBox(height: 20.h),
 
               // Remember Me Checkbox
-              Obx(() => Row(
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Transform.translate(
-                    offset: Offset(-4.w, 0), // adjust as needed to reduce gap
-                    child: Checkbox(
-                      value: controller.rememberMe.value,
-                      onChanged: (value) {
-                        controller.rememberMe.value = value ?? false;
-                      },
-                      visualDensity: VisualDensity.compact, // optional: tighter layout
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap, // tighter tap area
-                    ),
+                  Obx(() => Row(
+                    children: [
+                      Transform.translate(
+                        offset: Offset(-4.w, 0), // adjust as needed to reduce gap
+                        child: Checkbox(
+                          value: controller.rememberMe.value,
+                          onChanged: (value) {
+                            controller.rememberMe.value = value ?? false;
+                          },
+                          visualDensity: VisualDensity.compact, // optional: tighter layout
+                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap, // tighter tap area
+                        ),
+                      ),
+                      InkWell(
+                        borderRadius: BorderRadius.circular(8.r),
+                        onTap: () async {
+                          await Future.delayed(const Duration(milliseconds: 200)); // 👈 smooth delay
+                          // authController.toggleRememberMe();
+                          controller.rememberMe.value = !controller.rememberMe.value;
+                          },
+                        child: Container(
+                          padding: EdgeInsets.only(top: 12.w,right: 12.w,bottom: 12.w),
+                          child: Text(
+                            'Remember me',
+                            style: TextStyle(fontSize: 13.sp),
+                          ),
+                        ),
+                      ),
+
+                    ],
                   ),
-                  InkWell(
-                    borderRadius: BorderRadius.circular(8.r),
-                    onTap: () async {
-                      await Future.delayed(const Duration(milliseconds: 200)); // 👈 smooth delay
-                      // authController.toggleRememberMe();
-                      controller.rememberMe.value = !controller.rememberMe.value;
-                      },
-                    child: Container(
-                      padding: EdgeInsets.only(top: 12.w,right: 12.w,bottom: 12.w),
-                      child: Text(
-                        'Remember me',
-                        style: TextStyle(fontSize: 13.sp),
+                  ),
+                  // Forgot Password Button
+                  TextButton(
+                    onPressed: () {
+                      Get.toNamed(AppRoutes.forgotPassword);
+                    },
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: Text(
+                      'Forgot Password?',
+                      style: TextStyle(
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.colors.blue,
                       ),
                     ),
                   ),
                 ],
               ),
-              ),
+
 
               SizedBox(height: 40.h),
               Obx(() => SizedBox(
                 width: double.infinity,
                 height: 56.h,
                 child: ElevatedButton(
-                  // onPressed: controller.isLoading.value ? null : controller.login,
-                  onPressed:  controller.login,
+                  onPressed: controller.isLoading.value ? null : controller.login,
+                  // onPressed:  controller.login,
                   // onPressed:(){
                   //   Get.offAllNamed(AppRoutes.dashboard);
                   // },
@@ -167,11 +193,11 @@ class LoginScreen extends StatelessWidget {
                     height: 24.h,
                     child: CircularProgressIndicator(
                       strokeWidth: 2.w,
-                      color: AppTheme.colors.primary,
+                      color: AppTheme.colors.white,
                     ),
                   )
                       : Text(
-                    'Sign In',
+                    'Log In',
                     style: TextStyle(
                       fontSize: 18.sp,
                       fontWeight: FontWeight.bold,

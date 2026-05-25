@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:shimmer/shimmer.dart';
 
+import '../../../../Common/CommonSnackBar.dart';
+import '../../../../core/constants/icons.dart';
+import '../../../../core/routes/app_pages.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widget/app_bar/custom_app_bar.dart';
 import '../controller/attendance_controller.dart';
@@ -11,11 +16,12 @@ class AttendanceScreen extends StatelessWidget {
   AttendanceScreen({super.key});
 
   final AttendanceController controller = Get.put(AttendanceController());
-  final ScrollController _horizontalScrollController = ScrollController();
-  final ValueNotifier<bool> _isScrollingNotifier = ValueNotifier<bool>(false);
   final TextEditingController _searchController = TextEditingController();
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance?.addPostFrameCallback((_) {
+      controller.  fetchAttendance(page: 1);
+    });
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -33,8 +39,8 @@ class AttendanceScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildSearchSection(),
-                  SizedBox(height: 24.h),
+                  // _buildSearchSection(),
+                  // SizedBox(height: 24.h),
                   // Search Section
                   _buildDateSection(context),
                   SizedBox(height: 24.h),
@@ -103,74 +109,81 @@ class AttendanceScreen extends StatelessWidget {
       ],
     );
   }
+
   Widget _buildDateSection(BuildContext context) {
     return Row(
       children: [
-        // Month Dropdown
-        Container(
-          height: 45.h,
-          decoration: BoxDecoration(
-            border: Border.all(color: AppTheme.colors.black.withOpacity(0.2)),
-            borderRadius: BorderRadius.circular(8.r),
-          ),
-          child: InkWell(
-            onTap: () {
-              controller.pickDateRange(context);
-            },
-            borderRadius: BorderRadius.circular(8.r),
-            child: Row(
-              children: [
-                Padding(
-                  padding: EdgeInsets.only(left: 12.w),
-                  child: Obx(() => Text(
-                    controller.selectedDateText.value.isEmpty
-                        ? DateFormat('MMMM yyyy').format(DateTime.now())
-                        : controller.selectedDateText.value,
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w400,
-                      color: AppTheme.colors.black,
+
+        /// Month Year Picker
+        Expanded(
+          child: Container(
+            height: 45.h,
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: AppTheme.colors.black.withOpacity(0.2),
+              ),
+              borderRadius: BorderRadius.circular(8.r),
+            ),
+            child: InkWell(
+              onTap: () {
+                controller.pickMonthYear(context);
+              },
+              borderRadius: BorderRadius.circular(8.r),
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12.w),
+                child: Row(
+                  mainAxisAlignment:
+                  MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Obx(
+                            () => Text(
+                          controller.selectedMonthYear.value,
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w400,
+                            color: AppTheme.colors.black,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ),
-                    overflow: TextOverflow.ellipsis,
-                  )),
-                ),
-                SizedBox(width: 8.w),
-                Padding(
-                  padding: EdgeInsets.only(right: 12.w),
-                  child: Icon(
-                      Icons.calendar_today,
+
+                    Icon(
+                      Icons.calendar_month,
                       size: 20.w,
-                      color: AppTheme.colors.black.withOpacity(0.5)
-                  ),
+                      color: AppTheme.colors.black
+                          .withOpacity(0.5),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
+
         SizedBox(width: 12.w),
-        // Apply Button
-        Container(
+
+        /// Apply Button
+        SizedBox(
           height: 45.h,
+          width: 120.w,
           child: ElevatedButton(
             onPressed: () {
-              // Handle apply button press
-              if (controller.selectedDateRange.value != null) {
-                print('Applying filter for month: ${controller.selectedDateText.value}');
-              }
+              controller.fetchAttendance(page: 1);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.colors.blue,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8.r),
               ),
-              padding: EdgeInsets.symmetric(horizontal: 24.w),
             ),
             child: Text(
-              'Apply',
+              "Apply",
               style: TextStyle(
                 fontSize: 14.sp,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.colors.white,
+                color: Colors.white,
               ),
             ),
           ),
@@ -178,7 +191,6 @@ class AttendanceScreen extends StatelessWidget {
       ],
     );
   }
-
   Widget _buildStatsSection() {
     return Row(
       children: [
@@ -192,6 +204,7 @@ class AttendanceScreen extends StatelessWidget {
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
 
                 Text(
@@ -203,12 +216,14 @@ class AttendanceScreen extends StatelessWidget {
                   ),
                 ),
                 SizedBox(width: 8.w),
-                Text(
-                  "2",
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w600,
-                    // color: AppTheme.colors.success,
+                Obx(
+                      () => Text(
+                    controller.totalAbsent.value.toString(),
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.colors.blue,
+                    ),
                   ),
                 ),
               ],
@@ -226,6 +241,7 @@ class AttendanceScreen extends StatelessWidget {
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   "Total Present",
@@ -236,12 +252,14 @@ class AttendanceScreen extends StatelessWidget {
                   ),
                 ),
                 SizedBox(width: 8.w),
-                Text(
-                  "29",
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w600,
-                    // color: AppTheme.colors.info,
+                Obx(
+                      () => Text(
+                    controller.totalPresent.value.toString(),
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.colors.blue,
+                    ),
                   ),
                 ),
               ],
@@ -251,463 +269,707 @@ class AttendanceScreen extends StatelessWidget {
       ],
     );
   }
-
   Widget _buildAttendanceTable() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8.r),
+
+    return Obx(() {
+
+      if (controller.isLoading.value) {
+        // return const Center(
+        //   child: CircularProgressIndicator(),
+        // );
+        return _buildAttendanceShimmer();
+      }
+
+      if (controller.attendanceRecords.isEmpty) {
+        return Center(
+          child: Padding(
+            padding: EdgeInsets.all(20.w),
+            child: Text(
+              "No attendance found",
+              style: TextStyle(
+                fontSize: 14.sp,
+              ),
+            ),
           ),
-          child: Column(
-            children: [
-              NotificationListener<ScrollNotification>(
-                onNotification: (notification) {
-                  if (notification is ScrollStartNotification ||
-                      notification is ScrollUpdateNotification) {
-                    _isScrollingNotifier.value = true;
-                  } else if (notification is ScrollEndNotification) {
-                    Future.delayed(Duration(milliseconds: 500), () {
-                      _isScrollingNotifier.value = false;
-                    });
-                  }
-                  return false;
-                },
-                child: Obx(() {
-                  return SingleChildScrollView(
-                    controller: _horizontalScrollController,
-                    scrollDirection: Axis.horizontal,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Table Header
-                        Container(
-                          width: _calculateTotalWidth(),
-                          padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
-                          decoration: BoxDecoration(
-                            color: AppTheme.colors.gray,
-                            borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(8.r),
-                              topRight: Radius.circular(8.r),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              _buildHeaderCell("Employee", 120.w),
-                              _buildHeaderCell("Date", 100.w),
-                              _buildHeaderCell("Day", 80.w),
-                              _buildHeaderCell("Status", 100.w),
-                              _buildHeaderCell("Status Code", 100.w),
-                              _buildHeaderCell("Add Ticket", 100.w),
-                              _buildHeaderCell("Punching Time", 100.w),
-                              _buildHeaderCell("Hubstuff Time", 100.w),
-                              _buildHeaderCell("Leave Record", 100.w),
-                              _buildHeaderCell("Punch Records", 100.w),
-                              _buildHeaderCell("Clock In", 100.w),
-                              _buildHeaderCell("Clock Out", 100.w),
-                              _buildHeaderCell("Late", 80.w),
-                              _buildHeaderCell("Early Leaving", 100.w),
-                              _buildHeaderCell("Overtime", 80.w),
-                              _buildHeaderCell("Updated By", 120.w),
-                              _buildHeaderCell("Update At", 120.w),
-                            ],
-                          ),
-                        ),
+        );
+      }
 
-                        // Table Body
-                        Column(
-                          children: controller.attendanceRecords
-                              .asMap()
-                              .entries
-                              .map((entry) {
-                            final index = entry.key;
-                            final record = entry.value;
+      return ListView.separated(
+        shrinkWrap: true,
+        physics: NeverScrollableScrollPhysics(),
+        itemCount:
+        controller.attendanceRecords.length,
 
-                            return Container(
-                              width: _calculateTotalWidth(),
-                              padding: EdgeInsets.symmetric(
-                                  vertical: 12.h, horizontal: 16.w),
-                              decoration: BoxDecoration(
-                                border: Border(
-                                  bottom: index ==
-                                      controller.attendanceRecords.length - 1
-                                      ? BorderSide.none
-                                      : BorderSide(
-                                    color: AppTheme.colors.gray,
-                                    width: 1,
-                                  ),
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  _buildDataCell(record.employee, 120.w),
-                                  _buildDataCell(record.date, 100.w),
-                                  _buildDataCell(record.day, 80.w),
-                                  _buildStatusCell(record.status, 100.w),
-                                  _buildDataCell(record.statusCode, 100.w),
-                                  _buildAddTicketCell(record.hasTicket, record.date, 100.w),
-                                  _buildDataCell(record.punchingTime, 100.w),
-                                  _buildDataCell(record.hubstuffTime, 100.w),
-                                  _buildDataCell(record.leaveRecord, 100.w),
-                                  _buildDataCell(record.punchRecords, 100.w),
-                                  _buildDataCell(record.clockIn, 100.w),
-                                  _buildDataCell(record.clockOut, 100.w),
-                                  _buildDataCell(record.late, 80.w),
-                                  _buildDataCell(record.earlyLeaving, 100.w),
-                                  _buildDataCell(record.overtime, 80.w),
-                                  _buildDataCell(record.updatedBy, 120.w),
-                                  _buildDataCell(record.updateAt, 120.w),
-                                ],
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
+        separatorBuilder: (_, __) =>
+            SizedBox(height: 12.h),
+
+        itemBuilder: (context, index) {
+
+          final record =
+          controller.attendanceRecords[index];
+
+          final isPresent =
+              (record.status?.name ?? "")
+                  .toLowerCase() ==
+                  "present";
+
+          return Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius:
+              BorderRadius.circular(12.r),
+              border: Border.all(
+                color:
+                Colors.black.withOpacity(0.08),
+              ),
+            ),
+
+            child: Theme(
+              data: Theme.of(context).copyWith(
+                dividerColor: Colors.transparent,
               ),
 
-              // Scroll Indicator
-              Container(
-                height: 6.h,
-                margin: EdgeInsets.symmetric(vertical: 8.h),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final totalWidth = _calculateTotalWidth();
-                    final visibleWidth = MediaQuery.of(context).size.width - 32.w;
+              child: ExpansionTile(
 
-                    if (totalWidth <= visibleWidth) {
-                      return SizedBox.shrink();
-                    }
+                tilePadding:
+                EdgeInsets.symmetric(
+                  horizontal: 14.w,
+                  vertical: 6.h,
+                ),
 
-                    return ValueListenableBuilder<bool>(
-                      valueListenable: _isScrollingNotifier,
-                      builder: (context, isScrolling, child) {
-                        return AnimatedOpacity(
-                          opacity: isScrolling ? 1.0 : 0.7,
-                          duration: Duration(milliseconds: 300),
-                          child: Container(
-                            width: constraints.maxWidth,
-                            child: Stack(
-                              children: [
-                                // Background track
-                                Container(
-                                  width: constraints.maxWidth,
-                                  height: 3.h,
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[200],
-                                    borderRadius: BorderRadius.circular(1.5.r),
-                                  ),
-                                ),
+                childrenPadding:
+                EdgeInsets.symmetric(
+                  horizontal: 14.w,
+                  vertical: 12.h,
+                ),
 
-                                // Blue scroll thumb
-                                AnimatedBuilder(
-                                  animation: _horizontalScrollController,
-                                  builder: (context, child) {
-                                    final scrollOffset =
-                                    _horizontalScrollController.hasClients
-                                        ? _horizontalScrollController.offset
-                                        : 0.0;
-                                    final maxScrollExtent =
-                                    _horizontalScrollController.hasClients
-                                        ? _horizontalScrollController
-                                        .position.maxScrollExtent
-                                        : 1.0;
+                expandedCrossAxisAlignment:
+                CrossAxisAlignment.start,
 
-                                    final thumbWidth =
-                                        (visibleWidth / totalWidth) * constraints.maxWidth;
-                                    final thumbPosition = maxScrollExtent > 0
-                                        ? (scrollOffset / maxScrollExtent) *
-                                        (constraints.maxWidth - thumbWidth)
-                                        : 0.0;
+                leading: CircleAvatar(
+                  radius: 18.r,
+                  backgroundColor:
+                  AppTheme.colors.blue
+                      .withOpacity(0.1),
 
-                                    return Positioned(
-                                      left: thumbPosition
-                                          .clamp(0.0, constraints.maxWidth - thumbWidth),
-                                      child: Container(
-                                        width: thumbWidth,
-                                        height: 4.h,
-                                        decoration: BoxDecoration(
-                                          color: Colors.blue,
-                                          borderRadius: BorderRadius.circular(2.r),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.blue.withOpacity(0.3),
-                                              blurRadius: 2,
-                                              offset: Offset(0, 1),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ],
-                            ),
+                  child: Text(
+                    record.employeeName
+                        ?.toString()
+                        .split('.')
+                        .last[0] ??
+                        "U",
+                    style: TextStyle(
+                      color:
+                      AppTheme.colors.blue,
+                      fontWeight:
+                      FontWeight.bold,
+                    ),
+                  ),
+                ),
+
+                title: Text(
+                  record.employeeName
+                      ?.toString()
+                      .split('.')
+                      .last
+                      .replaceAll('_', ' ') ??
+                      "-",
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight:
+                    FontWeight.w600,
+                  ),
+                ),
+
+                subtitle: Padding(
+                  padding:
+                  EdgeInsets.only(top: 4.h),
+
+                  child: Text(
+                    controller.formatDate(
+                        record.date),
+
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ),
+
+                trailing: Row(
+                  mainAxisSize:
+                  MainAxisSize.min,
+
+                  children: [
+
+                    Container(
+                      padding:
+                      EdgeInsets.symmetric(
+                        horizontal: 10.w,
+                        vertical: 5.h,
+                      ),
+
+                      decoration: BoxDecoration(
+                        color: isPresent
+                            ? Colors.green
+                            : Colors.red,
+
+                        borderRadius:
+                        BorderRadius.circular(
+                            20.r),
+                      ),
+
+                      child: Text(
+                        record.status?.name ??
+                            "-",
+
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11.sp,
+                          fontWeight:
+                          FontWeight.w600,
+                        ),
+                      ),
+                    ),
+
+                    SizedBox(width: 10.w),
+
+                    (record.ticketStatus?.toLowerCase() == "close")
+                        ? Container(
+                      width: 50.w,
+                      height: 32.h,
+                      decoration: BoxDecoration(
+                        color: Colors.black,
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                      child: Center(
+                        child: Text(
+                          "Close",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10.sp,
+                            fontWeight: FontWeight.w600,
                           ),
-                        );
+                        ),
+                      ),
+                    )
+
+                        : (record.ticket == "1")
+                        ? GestureDetector(
+                      onTap: () {
+
+                        if (record.ticketId != null) {
+
+                          Get.toNamed(
+                            AppRoutes.reply,
+                            arguments: record.ticketId!,
+                            // arguments: {
+                            //   "ticket_id": record.ticketId
+                            //   // "attendance_id": record.id,
+                            //   // "attendance_status":
+                            //   // record.status?.name ?? "",
+                            // },
+                          );
+
+                        } else {
+
+                          SnackBarService.showErrorSnackBar(
+                            "Ticket ID not found",
+                          );
+                        }
                       },
+                      child: Container(
+                        width: 32.w,
+                        height: 32.h,
+                        decoration: BoxDecoration(
+                          color: AppTheme.colors.green,
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        child: Center(
+                          child: SvgPicture.asset(
+                            AppIcons.ACTION,
+                            width: 16.w,
+                            height: 16.h,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    )
+
+                        : GestureDetector(
+                      // onTap: () => controller.onAddTicketPressed(
+                      //   controller.formatDate(record.date),
+                      // ),
+                      onTap: () => controller.onAddTicketPressed(record),
+                      child: Container(
+                        width: 32.w,
+                        height: 32.h,
+                        decoration: BoxDecoration(
+                          color: AppTheme.colors.blue,
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        child: Icon(
+                          Icons.add,
+                          color: Colors.white,
+                          size: 18.w,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                children: [
+
+                  _buildDetailRow(
+                      "Day",
+                      record.day ?? "-"),
+
+                  _buildDetailRow(
+                      "Status Code",
+                      record.statusCode?.name ??
+                          "-"),
+
+                  _buildDetailRow(
+                      "Punching Time",
+                      record.duration
+                          ?.toString() ??
+                          "-"),
+
+                  _buildDetailRow(
+                      "Hubstaff Time",
+                      record.hubstuffDuration
+                          ?.toString() ??
+                          "-"),
+
+                  _buildDetailRow(
+                      "Punch Records",
+                      record.punchRecords
+                          ?.toString() ??
+                          "-"),
+
+                  _buildDetailRow(
+                      "Clock In",
+                      record.clockIn ?? "-"),
+
+                  _buildDetailRow(
+                      "Clock Out",
+                      record.clockOut ?? "-"),
+
+                  _buildDetailRow(
+                      "Late",
+                      record.late ?? "-"),
+
+                  _buildDetailRow(
+                      "Early Leaving",
+                      record.earlyLeaving ??
+                          "-"),
+
+                  _buildDetailRow(
+                      "Overtime",
+                      record.overtime ?? "-"),
+
+                  _buildDetailRow(
+                      "Updated At",
+                      controller
+                          .formatDateTime(
+                          record.updatedAt)),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    });
+  }
+  Widget _buildDetailRow(String title, String value) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 10.h),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+
+          SizedBox(
+            width: 120.w,
+            child: Text(
+              title,
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 13.sp,
+              ),
+            ),
+          ),
+
+          Expanded(
+            child: Text(
+              value.isEmpty ? "-" : value,
+              style: TextStyle(
+                fontSize: 13.sp,
+                color: Colors.black87,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  Widget _buildPagination() {
+
+    return Obx(() {
+
+      final current = controller.currentPage.value;
+      final last = controller.lastPage.value;
+
+      final bool hasNext = current < last;
+      final bool hasPrevious = current > 1;
+
+      return Row(
+        mainAxisAlignment:
+        MainAxisAlignment.spaceBetween,
+
+        children: [
+
+          /// PAGE INFO
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: 16.w,
+              vertical: 8.h,
+            ),
+
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius:
+              BorderRadius.circular(8.r),
+            ),
+
+            child: Text(
+              "$current of $last Pages",
+
+              style: TextStyle(
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ),
+
+          /// RIGHT SIDE
+          Row(
+            children: [
+
+              /// PAGE TEXT
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: 8.w,
+                  vertical: 8.h,
+                ),
+
+                child: Text(
+                  "Page",
+
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ),
+
+              SizedBox(width: 8.w),
+
+              /// PAGE POPUP
+              PopupMenuButton<String>(
+
+                color: Colors.white,
+
+                offset: Offset(0, 5.h),
+
+                onSelected: (String value) {
+
+                  controller.fetchAttendance(
+                    page: int.parse(value),
+                  );
+                },
+
+                itemBuilder: (BuildContext context) {
+
+                  return List.generate(
+                    last,
+                        (index) => (index + 1).toString(),
+                  ).map((String value) {
+
+                    return PopupMenuItem<String>(
+
+                      value: value,
+
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 12.h,
+                      ),
+
+                      child: Text(value),
                     );
-                  },
+
+                  }).toList();
+                },
+
+                child: Container(
+
+                  width: 55.w,
+                  height: 38.h,
+
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 10.w,
+                  ),
+
+                  decoration: BoxDecoration(
+
+                    color: Colors.white,
+
+                    borderRadius:
+                    BorderRadius.circular(8.r),
+
+                    border: Border.all(
+                      color: AppTheme.colors.black
+                          .withOpacity(0.2),
+                    ),
+                  ),
+
+                  child: Row(
+                    mainAxisAlignment:
+                    MainAxisAlignment.spaceBetween,
+
+                    children: [
+
+                      Text(
+                        current.toString(),
+
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+
+                      Icon(
+                        Icons.arrow_drop_down,
+                        size: 20.w,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              SizedBox(width: 16.w),
+
+              /// PREVIOUS BUTTON
+              GestureDetector(
+
+                onTap: hasPrevious
+                    ? () {
+
+                  controller.fetchAttendance(
+                    page: current - 1,
+                  );
+
+                }
+                    : null,
+
+                child: Container(
+
+                  padding: EdgeInsets.all(8.w),
+
+                  decoration: BoxDecoration(
+
+                    color: hasPrevious
+                        ? AppTheme.colors.blue
+                        : Colors.grey.shade300,
+
+                    borderRadius:
+                    BorderRadius.circular(8.r),
+
+                    border: Border.all(
+                      color: hasPrevious
+                          ? AppTheme.colors.blue
+                          : Colors.grey.shade400,
+                      width: 1.w,
+                    ),
+                  ),
+
+                  child: Icon(
+                    Icons.arrow_back,
+
+                    size: 20.w,
+
+                    color: hasPrevious
+                        ? Colors.white
+                        : Colors.grey,
+                  ),
+                ),
+              ),
+
+              SizedBox(width: 8.w),
+
+              /// NEXT BUTTON
+              GestureDetector(
+
+                onTap: hasNext
+                    ? () {
+
+                  controller.fetchAttendance(
+                    page: current + 1,
+                  );
+
+                }
+                    : null,
+
+                child: Container(
+
+                  padding: EdgeInsets.all(8.w),
+
+                  decoration: BoxDecoration(
+
+                    color: hasNext
+                        ? AppTheme.colors.blue
+                        : Colors.grey.shade300,
+
+                    borderRadius:
+                    BorderRadius.circular(8.r),
+
+                    border: Border.all(
+                      color: hasNext
+                          ? AppTheme.colors.blue
+                          : Colors.grey.shade400,
+                      width: 1.w,
+                    ),
+                  ),
+
+                  child: Icon(
+                    Icons.arrow_forward,
+
+                    size: 20.w,
+
+                    color: hasNext
+                        ? Colors.white
+                        : Colors.grey,
+                  ),
                 ),
               ),
             ],
           ),
-        ),
-      ],
-    );
+        ],
+      );
+    });
   }
+  Widget _buildAttendanceShimmer() {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey.shade300,
+      highlightColor: Colors.grey.shade100,
+      child: Column(
+        children: [
 
-  Widget _buildHeaderCell(String text, double width) {
-    return SizedBox(
-      width: width,
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 8.w),
-        child: Text(
-          text,
-          style: TextStyle(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-    );
-  }
+          /// Stats Cards
+          Row(
+            children: [
 
-  Widget _buildDataCell(String text, double width) {
-    return SizedBox(
-      width: width,
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 8.w),
-        child: Text(
-          text,
-          style: TextStyle(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w400,
-          ),
-          overflow: TextOverflow.ellipsis,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatusCell(String status, double width) {
-    final Color bgColor;
-    final Color textColor;
-
-    switch (status.toLowerCase()) {
-      case 'present':
-        bgColor = Colors.green;
-        // textColor = Color(0xFF16A34A);
-        break;
-      case 'absent':
-        bgColor = Colors.red;
-        // textColor = Color(0xFFDC2626);
-        break;
-      default:
-        bgColor = Colors.grey[200]!;
-        textColor = Colors.grey[800]!;
-    }
-
-    return SizedBox(
-      width: width,
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(4.r),
-        ),
-        child: Text(
-          status,
-          style: TextStyle(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAddTicketCell(bool hasTicket, String date, double width) {
-    return SizedBox(
-      width: width,
-      child: Center(
-        child: GestureDetector(
-          // ✅ Disable click if ticket already added
-          onTap: hasTicket ? null : () => controller.onAddTicketPressed(date),
-          child: Container(
-            width: 30.w,
-            height: 30.h,
-            decoration: BoxDecoration(
-              // ✅ Green if ticket exists
-              color: hasTicket
-                  ? Colors.green
-                  : AppTheme.colors.blue,
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Icon(
-                // Optional: change icon too
-                hasTicket ? Icons.check : Icons.add,
-                size: 16.w,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  double _calculateTotalWidth() {
-    return 120.w + // Employee
-        100.w + // Date
-        80.w + // Day
-        100.w + // Status
-        100.w + // Status Code
-        100.w + // Add Ticket
-        100.w + // Punching Time
-        100.w + // Hubstuff Time
-        100.w + // Leave Record
-        100.w + // Punch Records
-        100.w + // Clock In
-        100.w + // Clock Out
-        80.w + // Late
-        100.w + // Early Leaving
-        80.w + // Overtime
-        120.w + // Updated By
-        120.w + // Update At
-        (16.w * 2);
-  }
-
-  Widget _buildPagination() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        // Text: "1 of 13 Pages"
-        Container(
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8.r),
-          ),
-          child: Text(
-            "1 of 13 Pages",
-            style: TextStyle(
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-        ),
-
-        // Right side: Page selector and arrows
-        Row(
-          children: [
-            // "Page" text
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h),
-              child: Text(
-                "Page",
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-            ),
-            SizedBox(width: 8.w),
-
-            // Page number dropdown/input
-            Container(
-              width: 45.w,
-              height: 35.h,
-              padding: EdgeInsets.only(left: 8.w),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(4.r),
-                border: Border.all(
-                  color: AppTheme.colors.black.withOpacity(0.2),
-                  width: 1.w,
-                ),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: "1",
-                  icon: Icon(
-                    Icons.arrow_drop_down,
-                    size: 20.w,
+              Expanded(
+                child: Container(
+                  height: 70.h,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12.r),
                   ),
-                  isExpanded: true,
-                  items: List.generate(13, (index) => (index + 1).toString())
-                      .map((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(
-                        value,
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w400,
-                        ),
+                ),
+              ),
+
+              SizedBox(width: 12.w),
+
+              Expanded(
+                child: Container(
+                  height: 70.h,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          SizedBox(height: 24.h),
+
+          /// Attendance List
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: 6,
+            separatorBuilder: (_, __) => SizedBox(height: 12.h),
+
+            itemBuilder: (context, index) {
+
+              return Container(
+                padding: EdgeInsets.all(16.w),
+
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+
+                child: Row(
+                  children: [
+
+                    /// Avatar
+                    Container(
+                      width: 40.w,
+                      height: 40.w,
+
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
                       ),
-                    );
-                  }).toList(),
-                  onChanged: (String? newValue) {
-                    // Handle page change
-                  },
-                ),
-              ),
-            ),
-            SizedBox(width: 16.w),
+                    ),
 
-            // Back arrow
-            GestureDetector(
-              onTap: () {
-                // Handle previous page
-              },
-              child: Container(
-                padding: EdgeInsets.all(8.w),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border.all(
-                    color: AppTheme.colors.black.withOpacity(0.2),
-                    width: 1.w,
-                  ),
-                ),
-                child: Icon(
-                  Icons.arrow_back,
-                  size: 20.w,
-                ),
-              ),
-            ),
-            SizedBox(width: 8.w),
+                    SizedBox(width: 12.w),
 
-            // Forward arrow
-            GestureDetector(
-              onTap: () {
-                // Handle next page
-              },
-              child: Container(
-                padding: EdgeInsets.all(8.w),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border.all(
-                    color: AppTheme.colors.black.withOpacity(0.2),
-                    width: 1.w,
-                  ),
+                    /// Name + Date
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment:
+                        CrossAxisAlignment.start,
+
+                        children: [
+
+                          Container(
+                            width: 140.w,
+                            height: 12.h,
+                            color: Colors.white,
+                          ),
+
+                          SizedBox(height: 8.h),
+
+                          Container(
+                            width: 90.w,
+                            height: 10.h,
+                            color: Colors.white,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    /// Status
+                    Container(
+                      width: 70.w,
+                      height: 28.h,
+
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius:
+                        BorderRadius.circular(20.r),
+                      ),
+                    ),
+                  ],
                 ),
-                child: Icon(
-                  Icons.arrow_forward,
-                  size: 20.w,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 }
