@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/routes/app_pages.dart';
+import '../../core/theme/app_theme.dart';
 
 
 class SharedPrefHelper {
@@ -80,11 +81,6 @@ class SharedPrefHelper {
     await prefs.setString('user_type', userType);
   }
 
-  static Future<String> getUserType() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('user_type') ?? '';
-  }
-
   static const _savedPasswordKey = 'saved_password';
   static const _rememberMeKey = 'remember_me';
 
@@ -133,18 +129,11 @@ class SharedPrefHelper {
     await prefs.setString('user_name', userName);
   }
 
-  static Future<String> getUserName() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('user_name') ?? '';
-  }
-
-  // Save user role
   static Future<void> saveUserRole(String role) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('user_role', role);
   }
 
-// Get user role
   static Future<String?> getUserRole() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('user_role');
@@ -153,6 +142,75 @@ class SharedPrefHelper {
   static Future<void> clearAccessToken() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('access_token');
+  }
+  static const _userNameKey = 'user_name';
+  static const _userEmailKey = 'user_email';
+  static const _userTypeKey = 'user_type';
+  static const _isDepartmentAdminKey = 'is_department_admin';
+  static const _employeeEncIdKey = 'employee_enc_id';
+  static const _userIdKey = 'user_id';
+
+  static Future<void> saveUserData({
+    required String userId,
+    required String userName,
+    required String userEmail,
+    required String userType,
+    required bool isDepartmentAdmin,
+    required String employeeEncId,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_userIdKey, userId);
+    await prefs.setString(_userNameKey, userName);
+    await prefs.setString(_userEmailKey, userEmail);
+    await prefs.setString(_userTypeKey, userType);
+    await prefs.setBool(_isDepartmentAdminKey, isDepartmentAdmin);
+    await prefs.setString(_employeeEncIdKey, employeeEncId);
+  }
+
+  // Get user ID
+  static Future<String> getUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_userIdKey) ?? '';
+  }
+
+// Get user name
+  static Future<String> getUserName() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_userNameKey) ?? '';
+  }
+
+// Get user email
+  static Future<String> getUserEmail() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_userEmailKey) ?? '';
+  }
+
+// Get user type
+  static Future<String> getUserType() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_userTypeKey) ?? '';
+  }
+
+// Get department admin status
+  static Future<bool> getIsDepartmentAdmin() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_isDepartmentAdminKey) ?? false;
+  }
+
+// Get employee encrypted ID
+  static Future<String> getEmployeeEncId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_employeeEncIdKey) ?? '';
+  }
+  // Clear user data (called during logout)
+  static Future<void> clearUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_userIdKey);
+    await prefs.remove(_userNameKey);
+    await prefs.remove(_userEmailKey);
+    await prefs.remove(_userTypeKey);
+    await prefs.remove(_isDepartmentAdminKey);
+    await prefs.remove(_employeeEncIdKey);
   }
 
   static Future<void> clearLoginDetails(BuildContext context) async {
@@ -224,7 +282,7 @@ class SharedPrefHelper {
                     child: Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(4.r),
-                        // color: AppTheme.colors.settingred,
+                        color: AppTheme.colors.blue.withOpacity(0.1),
                       ),
                       child: Padding(
                         padding: EdgeInsets.all(16.h),
@@ -260,7 +318,7 @@ class SharedPrefHelper {
                     child: Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(4.r),
-                        // color: AppTheme.colors.noblue,
+                        color: AppTheme.colors.red.withOpacity(0.1),
                       ),
                       child: Padding(
                         padding: EdgeInsets.all(16.h),

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:month_year_picker/month_year_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'core/binding/core_binding.dart';
 import 'core/data/local/local_preference.dart';
@@ -32,8 +34,6 @@ class MyApp extends StatelessWidget {
   const MyApp({
     super.key,
   });
-
-  // This widget is the root of your application os tjopaj'dfagnma'g dfgj.
   @override
   Widget build(BuildContext context) {
     ScreenUtil.init(context);
@@ -42,6 +42,17 @@ class MyApp extends StatelessWidget {
 
       minTextAdapt: true,
       child: GetMaterialApp(
+        debugShowCheckedModeBanner: false,
+        localizationsDelegates:   [
+          MonthYearPickerLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+
+        supportedLocales: const [
+          Locale('en'),
+        ],
         builder: (BuildContext context, Widget? child) {
           return MediaQuery(
             data: MediaQuery.of(context).copyWith(
@@ -50,14 +61,15 @@ class MyApp extends StatelessWidget {
             child: child!,
           );
         },
-        title: 'Itranet',
+        title: 'Intranet',
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
         themeMode: ThemeMode.light,
         initialBinding: CoreBinding(),
-        initialRoute: AppRoutes.login,
+        initialRoute: AppRoutes.splash,
         getPages: GetRouter.routes,
         // home: MapSample(),
+
       ),
     );
   }

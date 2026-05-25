@@ -3,10 +3,13 @@ import 'dart:ui';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 
 import '../../../../Common/CommonSnackBar.dart';
+import '../../../../core/constants/icons.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../controller/manage_ticket_controller.dart';
 
 class CreateTicketDialog extends StatefulWidget {
   const CreateTicketDialog({Key? key}) : super(key: key);
@@ -18,31 +21,27 @@ class CreateTicketDialog extends StatefulWidget {
 class _CreateTicketDialog extends State<CreateTicketDialog> {
   final TextEditingController _subjectController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
+  final ManageTicketsController controller =
+  Get.find<ManageTicketsController>();
   String? _selectedPriority;
   String? _selectedDepartment;
-  PlatformFile? _selectedFile;
-
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   // Set the initial value for description textfield
-  //   _descriptionController.text = 'Hello\nKindly Change The Attendance Status As Per Below Details:\nDate :\nCurrent Status : Absent\nNew Status Required :\nReason:';
-  // }
+  // PlatformFile? _selectedFile;
+  List<PlatformFile> _selectedFiles = [];
   // Priority options
-  final List<String> _priorityOptions = [
-    'High',
-    'Medium',
-    'Low',
-    'Critical'
-  ];
+  final Map<String, String> _priorityOptions = {
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High",
+    "critical": "Critical",
+  };
 
   // Department options
-  final List<String> _departmentOptions = [
-    'HR Department',
-    'Hardware and IT Support',
-    'Reporting Officer',
-    'Software IT Support'
-  ];
+  final Map<String, String> _departmentOptions = {
+    "hr": "HR Department",
+    "hardware": "Hardware(IT Support)",
+    "reporting_officer": "Reporting Officer",
+    "software": "Software(IT Support)",
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -66,7 +65,7 @@ class _CreateTicketDialog extends State<CreateTicketDialog> {
               children: [
                 // Title
                 Text(
-                  'Create Ticket',
+                  'Create New Ticket',
                   style: TextStyle(
                     fontSize: 18.sp,
                     fontWeight: FontWeight.w600,
@@ -87,50 +86,174 @@ class _CreateTicketDialog extends State<CreateTicketDialog> {
                 SizedBox(height: 16.h),
 
                 // Priority Dropdown
-                DropdownButtonFormField<String>(
-                  decoration: InputDecoration(
-                    labelText: 'Priority',
-                    border: OutlineInputBorder(
+                // DropdownButtonFormField<String>(
+                //   decoration: InputDecoration(
+                //     labelText: 'Priority',
+                //     border: OutlineInputBorder(
+                //       borderRadius: BorderRadius.circular(8.r),
+                //     ),
+                //   ),
+                //   value: _selectedPriority,
+                //   items: _priorityOptions.map((String value) {
+                //     return DropdownMenuItem<String>(
+                //       value: value,
+                //       child: Text(value),
+                //     );
+                //   }).toList(),
+                //   onChanged: (String? newValue) {
+                //     setState(() {
+                //       _selectedPriority = newValue;
+                //     });
+                //   },
+                //   hint: Text('Select Priority'),
+                // ),
+                PopupMenuButton<String>(
+                  color: Colors.white,
+                  offset: Offset(0, 5.h), // Space between button and menu
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade400),
                       borderRadius: BorderRadius.circular(8.r),
                     ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          _selectedPriority != null
+                              ? _priorityOptions[_selectedPriority]!
+                              : 'Select Priority',
+                        ),
+                        Icon(Icons.arrow_drop_down),
+                      ],
+                    ),
                   ),
-                  value: _selectedPriority,
-                  items: _priorityOptions.map((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
-                  onChanged: (String? newValue) {
+
+                  // Control the menu appearance
+                  constraints: BoxConstraints(
+                    minWidth: 150.w,
+                    maxWidth: 300.w,
+                    maxHeight: 300.h,
+                  ),
+
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+
+                  elevation: 8,
+
+                  // This adds padding/margin around the entire dropdown content
+                  menuPadding: EdgeInsets.all(12.w), // Creates space around the items
+
+                  itemBuilder: (BuildContext context) {
+
+                    return _priorityOptions.entries.map((entry) {
+
+                      return PopupMenuItem<String>(
+                        value: entry.key,
+
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 12.h,
+                        ),
+
+                        child: Text(entry.value),
+                      );
+
+                    }).toList();
+                  },
+
+                  onSelected: (String newValue) {
                     setState(() {
                       _selectedPriority = newValue;
                     });
                   },
-                  hint: Text('Select Priority'),
                 ),
                 SizedBox(height: 16.h),
 
                 // Department Dropdown
-                DropdownButtonFormField<String>(
-                  decoration: InputDecoration(
-                    labelText: 'Department',
-                    border: OutlineInputBorder(
+                // DropdownButtonFormField<String>(
+                //   decoration: InputDecoration(
+                //     labelText: 'Department',
+                //     border: OutlineInputBorder(
+                //       borderRadius: BorderRadius.circular(8.r),
+                //     ),
+                //   ),
+                //   value: _selectedDepartment,
+                //   items: _departmentOptions.map((String value) {
+                //     return DropdownMenuItem<String>(
+                //       value: value,
+                //       child: Text(value),
+                //     );
+                //   }).toList(),
+                //   onChanged: (String? newValue) {
+                //     setState(() {
+                //       _selectedDepartment = newValue;
+                //     });
+                //   },
+                //   hint: Text('Select Department'),
+                // ),
+                PopupMenuButton<String>(
+                  color: Colors.white,
+                  offset: Offset(0, 5.h), // Space between button and menu
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade400),
                       borderRadius: BorderRadius.circular(8.r),
                     ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          _selectedDepartment != null
+                              ? _departmentOptions[_selectedDepartment]!
+                              : 'Select Department',
+                        ),
+                        Icon(Icons.arrow_drop_down),
+                      ],
+                    ),
                   ),
-                  value: _selectedDepartment,
-                  items: _departmentOptions.map((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
-                  onChanged: (String? newValue) {
+
+                  // Control the menu appearance
+                  constraints: BoxConstraints(
+                    minWidth: 150.w,
+                    maxWidth: 300.w,
+                    maxHeight: 300.h,
+                  ),
+
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+
+                  elevation: 8,
+
+                  // This adds padding/margin around the entire dropdown content
+                  menuPadding: EdgeInsets.all(12.w), // Creates space around the items
+
+                  itemBuilder: (BuildContext context) {
+
+                    return _departmentOptions.entries.map((entry) {
+
+                      return PopupMenuItem<String>(
+                        value: entry.key,
+
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 12.h,
+                        ),
+
+                        child: Text(entry.value),
+                      );
+
+                    }).toList();
+                  },
+
+                  onSelected: (String newValue) {
                     setState(() {
                       _selectedDepartment = newValue;
                     });
                   },
-                  hint: Text('Select Department'),
                 ),
                 SizedBox(height: 16.h),
 
@@ -139,6 +262,7 @@ class _CreateTicketDialog extends State<CreateTicketDialog> {
                   maxLines: 8,
                   decoration: InputDecoration(
                     // labelText: 'Description',
+                    hintText: 'Description',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8.r),
                     ),
@@ -149,21 +273,43 @@ class _CreateTicketDialog extends State<CreateTicketDialog> {
                   color: Colors.transparent,
                   child: InkWell(
                     onTap: () async {
+
                       try {
-                        final FilePicker filePicker = FilePicker.platform;
-                        final result = await filePicker.pickFiles(
+
+                        final result =
+                        await FilePicker.platform.pickFiles(
+
+                          allowMultiple: true,
+
                           type: FileType.custom,
-                          allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx'],
+
+                          allowedExtensions: [
+                            'jpg',
+                            'jpeg',
+                            'png',
+                            'pdf',
+                            'doc',
+                            'docx',
+                            'xls',
+                            'xlsx',
+                          ],
                         );
 
                         if (result != null) {
+
                           setState(() {
-                            _selectedFile = result.files.first;
+
+                            _selectedFiles = result.files;
                           });
                         }
+
                       } catch (e) {
-                        print('Error picking file: $e');
-                        SnackBarService.showErrorSnackBar('Error picking file');
+
+                        debugPrint("FILE PICK ERROR : $e");
+
+                        SnackBarService.showErrorSnackBar(
+                          'Error picking file',
+                        );
                       }
                     },
                     borderRadius: BorderRadius.circular(8.r),
@@ -184,19 +330,22 @@ class _CreateTicketDialog extends State<CreateTicketDialog> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(
-                                Icons.attach_file,
-                                size: 20.w,
-                                color: _selectedFile != null ? AppTheme.colors.blue : Colors.grey,
+                              SvgPicture.asset(
+                                AppIcons.UPLOAD, // 👈 your upload SVG path
+                                width: 20.w,
+                                height: 20.w,
+                                color:   AppTheme.colors.blue,
                               ),
                               SizedBox(width: 8.w),
                               Text(
-                                _selectedFile?.name ?? 'Attach file',
+                                _selectedFiles.isNotEmpty
+                                    ? "${_selectedFiles.length} files selected"
+                                    : "Attach file",
                                 style: TextStyle(
                                   fontSize: 14.sp,
-                                  color: _selectedFile != null
-                                      ? Colors.black
-                                      : Colors.grey,
+                                  // color: _selectedFile != null
+                                  //     ? Colors.black
+                                  //     : Colors.grey,
                                 ),
                               ),
                             ],
@@ -212,37 +361,19 @@ class _CreateTicketDialog extends State<CreateTicketDialog> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     // Cancel Button
-                    TextButton(
-                      onPressed: () {
-                        Get.back();
-                      },
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 24.w,
-                          vertical: 12.h,
-                        ),
-                      ),
-                      child: Text(
-                        'Cancel',
-                        style: TextStyle(fontSize: 14.sp),
-                      ),
-                    ),
-                    SizedBox(width: 12.w),
-
                     // Create Button
                     ElevatedButton(
                       onPressed: () async {
-                        // Handle create ticket logic
+
                         if (_validateForm()) {
+
                           await _createTicket();
-                          // Get.back();
-                          Navigator.of(context).pop();
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
+                        backgroundColor: AppTheme.colors.blue,
                         padding: EdgeInsets.symmetric(
-                          horizontal: 24.w,
+                          horizontal: 44.w,
                           vertical: 12.h,
                         ),
                         shape: RoundedRectangleBorder(
@@ -257,6 +388,45 @@ class _CreateTicketDialog extends State<CreateTicketDialog> {
                         ),
                       ),
                     ),
+                    SizedBox(width: 10.w,),
+                    ElevatedButton(
+                      onPressed: () async {
+                        // Handle create ticket logic
+                        Get.back();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 44.w,
+                          vertical: 12.h,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                      ),
+                      child: Text(
+                        'Cancel',
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ),
+                    // TextButton(
+                    //   onPressed: () {
+                    //     Get.back();
+                    //   },
+                    //   style: TextButton.styleFrom(
+                    //     padding: EdgeInsets.symmetric(
+                    //       horizontal: 24.w,
+                    //       vertical: 12.h,
+                    //     ),
+                    //   ),
+                    //   child: Text(
+                    //     'Cancel',
+                    //     style: TextStyle(fontSize: 14.sp),
+                    //   ),
+                    // ),
                   ],
                 ),
               ],
@@ -285,10 +455,20 @@ class _CreateTicketDialog extends State<CreateTicketDialog> {
 
   Future<void> _createTicket() async {
 
-    SnackBarService.showSuccessSnackBar(
-      'Ticket created successfully for',
+    final bool isSuccess =
+    await controller.createTicket(
+
+      title: _subjectController.text.trim(),
+
+      priority: _selectedPriority!,
+
+      department: _selectedDepartment!,
+
+      description:
+      _descriptionController.text.trim(),
+
+      files: _selectedFiles,
     );
-    await Future.delayed(Duration(milliseconds: 500));
   }
 
   @override

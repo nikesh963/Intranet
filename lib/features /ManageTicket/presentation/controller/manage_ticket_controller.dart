@@ -1,238 +1,362 @@
-// features/tickets/presentation/controllers/manage_tickets_controller.dart
+// features/tickets/presentation/controller/manage_ticket_controller.dart
+
+import 'package:dio/dio.dart' as dio;
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
-
+import '../../../../Common/CommonSnackBar.dart';
+import '../../../../Common/helper/ApiHelper.dart';
+import '../../../../core/routes/app_pages.dart';
 import '../../model/manage_ticket_model.dart';
 import '../widget/create_ticket_dialog.dart';
 
 
-
 class ManageTicketsController extends GetxController {
-  final RxList<ManageTicketModel> tickets = <ManageTicketModel>[
-    ManageTicketModel(
-      id: '1',
-      employee: 'John Doe',
-      date: 'Dec 15, 2025',
-      ticketCode: 'TCK-001',
-      status: 'Approve',
-      title: 'Attendance Change Request',
-      description: 'Need to change attendance status from Absent to Present',
-      ro: 'Manager 1',
-      newStatus: 'Present',
-      department: 'HR Department',
-      priority: 'High',
-      createdBy: 'John Doe',
-      createdAt: 'Dec 15, 9:30 AM',
-    ),
-    ManageTicketModel(
-      id: '2',
-      employee: 'Jane Smith',
-      date: 'Dec 16, 2025',
-      ticketCode: 'TCK-002',
-      status: 'Rejected',
-      title: 'System Access Issue',
-      description: 'Unable to access attendance portal',
-      ro: 'Manager 2',
-      newStatus: 'N/A',
-      department: 'Software IT Support',
-      priority: 'Critical',
-      createdBy: 'Jane Smith',
-      createdAt: 'Dec 16, 10:15 AM',
-      updatedAt: 'Dec 16, 11:00 AM',
-    ),
-    ManageTicketModel(
-      id: '3',
-      employee: 'Robert Johnson',
-      date: 'Dec 17, 2025',
-      ticketCode: 'TCK-003',
-      status: 'Rejected',
-      title: 'Late Marking Request',
-      description: 'Forgot to mark attendance, request approval',
-      ro: 'Manager 1',
-      newStatus: 'Present',
-      department: 'Reporting Officer',
-      priority: 'Medium',
-      createdBy: 'Robert Johnson',
-      createdAt: 'Dec 17, 8:45 AM',
-      resolvedAt: 'Dec 17, 4:30 PM',
-    ),
-    ManageTicketModel(
-      id: '4',
-      employee: 'Sarah Williams',
-      date: 'Dec 18, 2025',
-      ticketCode: 'TCK-004',
-      status: 'Pending',
-      title: 'Leave Approval Request',
-      description: 'Request for 2 days casual leave',
-      ro: 'Manager 3',
-      newStatus: 'Leave',
-      department: 'HR Department',
-      priority: 'Low',
-      createdBy: 'Sarah Williams',
-      createdAt: 'Dec 18, 9:00 AM',
-      resolvedAt: 'Dec 18, 12:00 PM',
-      updatedAt: 'Dec 18, 3:00 PM',
-    ),
-    ManageTicketModel(
-      id: '5',
-      employee: 'Michael Brown',
-      date: 'Dec 19, 2025',
-      ticketCode: 'TCK-005',
-      status: 'Pending',
-      title: 'Hardware Issue',
-      description: 'Biometric device not working',
-      ro: 'Manager 2',
-      newStatus: 'N/A',
-      department: 'Hardware and IT Support',
-      priority: 'High',
-      createdBy: 'Michael Brown',
-      createdAt: 'Dec 19, 10:30 AM',
-    ),
-    ManageTicketModel(
-      id: '6',
-      employee: 'Emily Davis',
-      date: 'Dec 20, 2025',
-      ticketCode: 'TCK-006',
-      status: 'Pending',
-      title: 'Salary Query',
-      description: 'Deduction in salary for attendance',
-      ro: 'Manager 1',
-      newStatus: 'N/A',
-      department: 'HR Department',
-      priority: 'Medium',
-      createdBy: 'Emily Davis',
-      createdAt: 'Dec 20, 11:00 AM',
-      updatedAt: 'Dec 20, 2:30 PM',
-    ),
-    ManageTicketModel(
-      id: '7',
-      employee: 'David Wilson',
-      date: 'Dec 21, 2025',
-      ticketCode: 'TCK-007',
-      status: 'Pending',
-      title: 'Report Generation Issue',
-      description: 'Cannot generate monthly attendance report',
-      ro: 'Manager 3',
-      newStatus: 'N/A',
-      department: 'Software IT Support',
-      priority: 'Critical',
-      createdBy: 'David Wilson',
-      createdAt: 'Dec 21, 9:15 AM',
-    ),
-    ManageTicketModel(
-      id: '8',
-      employee: 'Lisa Anderson',
-      date: 'Dec 22, 2025',
-      ticketCode: 'TCK-008',
-      status: 'Pending',
-      title: 'Early Leaving Request',
-      description: 'Need to leave early for medical appointment',
-      ro: 'Manager 2',
-      newStatus: 'Half Day',
-      department: 'Reporting Officer',
-      priority: 'Low',
-      createdBy: 'Lisa Anderson',
-      createdAt: 'Dec 22, 8:30 AM',
-      resolvedAt: 'Dec 22, 10:00 AM',
-    ),
-  ].obs;
 
-  final RxString selectedMonth = 'December 2025'.obs;
-  final Rx<DateTimeRange?> selectedDateRange = Rx<DateTimeRange?>(null);
-  final RxString selectedDateText = ''.obs;
-  final TextEditingController datePickerController = TextEditingController();
-  final TextEditingController searchController = TextEditingController();
+  final ApiHelper _apiHelper = ApiHelper();
 
-  final RxString selectedStatus = 'All'.obs;
-  final RxString selectedDepartment = 'All'.obs;
-  final RxString selectedPriority = 'All'.obs;
+  RxList<Ticket> tickets = <Ticket>[].obs;
+
+  RxBool isLoading = false.obs;
+  RxInt currentPage = 1.obs;
+  RxInt lastPage = 1.obs;
+  RxInt totalItems = 0.obs;
+  RxInt perPage = 10.obs;
+  final TextEditingController searchController =
+  TextEditingController();
+
+  RxString selectedStatus = "All".obs;
 
   @override
   void onInit() {
     super.onInit();
+    getTickets();
   }
 
-  void onCreateTicketPressed() {
-    // Navigate to create ticket screen or show dialog
-    Get.dialog(
-      CreateTicketDialog(),
-      barrierDismissible: false,
-    );
+  /// ================= GET TICKETS =================
 
+  // Future<void> getTickets() async {
+  //
+  //   try {
+  //
+  //     isLoading.value = true;
+  //
+  //     final response =
+  //     await _apiHelper.get("/mobile/ticket");
+  //
+  //     final ticketsResponse =
+  //     Tickets.fromJson(response.data);
+  //
+  //     tickets.value =
+  //         ticketsResponse.data?.tickets ?? [];
+  //
+  //   } catch (e) {
+  //
+  //     debugPrint("GET TICKETS ERROR : $e");
+  //
+  //     Get.snackbar(
+  //       "Error",
+  //       "Failed to load tickets",
+  //       backgroundColor: Colors.red,
+  //       colorText: Colors.white,
+  //     );
+  //
+  //   } finally {
+  //
+  //     isLoading.value = false;
+  //   }
+  // }
+  Future<void> getTickets({int page = 1}) async {
+
+    try {
+
+      isLoading.value = true;
+
+      final response =
+      await _apiHelper.get("/mobile/ticket?page=$page");
+
+      final ticketsResponse =
+      Tickets.fromJson(response.data);
+
+      tickets.value =
+          ticketsResponse.data?.tickets ?? [];
+
+      /// PAGINATION
+      currentPage.value =
+          ticketsResponse.data?.pagination?.currentPage ?? 1;
+
+      lastPage.value =
+          ticketsResponse.data?.pagination?.lastPage ?? 1;
+
+      totalItems.value =
+          ticketsResponse.data?.pagination?.total ?? 0;
+
+      perPage.value =
+          ticketsResponse.data?.pagination?.perPage ?? 10;
+
+    } catch (e) {
+
+      debugPrint("GET TICKETS ERROR : $e");
+
+      Get.snackbar(
+        "Error",
+        "Failed to load tickets",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+
+    } finally {
+
+      isLoading.value = false;
+    }
+  }
+  /// NEXT PAGE
+  void nextPage() {
+
+    if (currentPage.value < lastPage.value) {
+
+      getTickets(
+        page: currentPage.value + 1,
+      );
+    }
   }
 
-  void onViewTicket(ManageTicketModel ticket) {
-    // Navigate to ticket details screen
-    Get.snackbar(
-      'View Ticket',
-      'Viewing ticket: ${ticket.ticketCode}',
-      backgroundColor: Colors.green,
-      colorText: Colors.white,
-    );
+  /// PREVIOUS PAGE
+  void previousPage() {
+
+    if (currentPage.value > 1) {
+
+      getTickets(
+        page: currentPage.value - 1,
+      );
+    }
   }
 
-  void onEditTicket(ManageTicketModel ticket) {
-    // Navigate to edit ticket screen
-    Get.snackbar(
-      'Edit Ticket',
-      'Editing ticket: ${ticket.ticketCode}',
-      backgroundColor: Colors.orange,
-      colorText: Colors.white,
-    );
+  /// CHANGE PAGE
+  void changePage(int page) {
+
+    getTickets(page: page);
   }
 
-  void onDeleteTicket(ManageTicketModel ticket) {
-    Get.defaultDialog(
-      title: 'Delete Ticket',
-      middleText: 'Are you sure you want to delete ticket ${ticket.ticketCode}?',
-      textConfirm: 'Yes',
-      textCancel: 'No',
-      confirmTextColor: Colors.white,
-      onConfirm: () {
-        tickets.remove(ticket);
-        Get.back();
-        Get.snackbar(
-          'Success',
-          'Ticket ${ticket.ticketCode} deleted successfully',
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-        );
-      },
-    );
+  /// HAS NEXT PAGE
+  bool get hasNextPage {
+
+    return currentPage.value < lastPage.value;
   }
 
-  // Filter tickets based on search and filters
-  List<ManageTicketModel> get filteredTickets {
+  /// HAS PREVIOUS PAGE
+  bool get hasPreviousPage {
+
+    return currentPage.value > 1;
+  }
+  /// ================= FILTERED TICKETS =================
+
+  List<Ticket> get filteredTickets {
+
+    final search =
+    searchController.text.toLowerCase();
+
     return tickets.where((ticket) {
-      // Search filter
-      final searchTerm = searchController.text.toLowerCase();
-      final matchesSearch = searchTerm.isEmpty ||
-          ticket.employee.toLowerCase().contains(searchTerm) ||
-          ticket.ticketCode.toLowerCase().contains(searchTerm) ||
-          ticket.title.toLowerCase().contains(searchTerm) ||
-          ticket.department.toLowerCase().contains(searchTerm);
 
-      // Status filter
-      final matchesStatus = selectedStatus.value == 'All' ||
-          ticket.status.toLowerCase() == selectedStatus.value.toLowerCase();
+      final matchesSearch =
 
-      // Department filter
-      final matchesDepartment = selectedDepartment.value == 'All' ||
-          ticket.department == selectedDepartment.value;
+          search.isEmpty ||
 
-      // Priority filter
-      final matchesPriority = selectedPriority.value == 'All' ||
-          ticket.priority == selectedPriority.value;
+              (ticket.employeeName ?? "")
+                  .toLowerCase()
+                  .contains(search) ||
 
-      return matchesSearch && matchesStatus && matchesDepartment && matchesPriority;
+              (ticket.ticketCode ?? "")
+                  .toLowerCase()
+                  .contains(search) ||
+
+              (ticket.title ?? "")
+                  .toLowerCase()
+                  .contains(search);
+
+      final matchesStatus =
+
+          selectedStatus.value == "All" ||
+
+              (ticket.status ?? "")
+                  .toLowerCase() ==
+                  selectedStatus.value.toLowerCase();
+
+      return matchesSearch &&
+          matchesStatus;
+
     }).toList();
   }
 
-  // Get counts for statistics
-  int get openTicketsCount => tickets.where((t) => t.status == 'Open').length;
-  int get inProgressTicketsCount => tickets.where((t) => t.status == 'In Progress').length;
-  int get resolvedTicketsCount => tickets.where((t) => t.status == 'Resolved').length;
-  int get closedTicketsCount => tickets.where((t) => t.status == 'Closed').length;
-  int get totalTicketsCount => tickets.length;
+  /// ================= STATUS COLOR =================
+
+  Color getStatusColor(String? status) {
+
+    switch (status?.toLowerCase()) {
+
+      case "open":
+        return Colors.orange;
+
+      case "closed":
+        return Colors.green;
+
+      case "pending":
+        return Colors.blue;
+
+      case "rejected":
+        return Colors.red;
+
+      default:
+        return Colors.grey;
+    }
+  }
+
+  /// ================= PRIORITY COLOR =================
+
+  Color getPriorityColor(String? priority) {
+
+    switch (priority?.toLowerCase()) {
+
+      case "high":
+        return Colors.red;
+
+      case "medium":
+        return Colors.orange;
+
+      case "low":
+        return Colors.green;
+
+      default:
+        return Colors.grey;
+    }
+  }
+
+  /// ================= ACTIONS =================
+
+  // void onViewTicket(Ticket ticket) {
+  //
+  //   Get.snackbar(
+  //     "Ticket",
+  //     ticket.ticketCode ?? "",
+  //     backgroundColor: Colors.green,
+  //     colorText: Colors.white,
+  //   );
+  // }
+  void onViewTicket(Ticket ticket) {
+
+    if (ticket.id == null) {
+
+      SnackBarService.showErrorSnackBar(
+        "Ticket ID not found",
+      );
+
+      return;
+    }
+
+    Get.toNamed(
+      AppRoutes.reply,
+      arguments: ticket.id!,
+    );
+  }
+  void onCreateTicketPressed() {
+    Get.dialog(
+      CreateTicketDialog(),
+      barrierDismissible: true,
+    );
+  }
+
+  /// ================= CREATE TICKET =================
+
+  Future<bool> createTicket({
+    required String title,
+    required String priority,
+    required String description,
+    required String department,
+    List<PlatformFile>? files,
+  }) async {
+
+    try {
+
+      isLoading.value = true;
+
+      dio.FormData formData = dio.FormData.fromMap({
+
+        "title": title,
+        "priority": priority,
+        "description": description,
+        "ticket_department": department,
+      });
+
+      /// MULTIPLE FILES
+      if (files != null && files.isNotEmpty) {
+
+        for (var file in files) {
+
+          if (file.path != null) {
+
+            formData.files.add(
+              MapEntry(
+                "atteched_file[]",
+
+                await dio.MultipartFile.fromFile(
+                  file.path!,
+                  filename: file.name,
+                ),
+              ),
+            );
+          }
+        }
+      }
+
+      final response = await _apiHelper.postFormData(
+        "/mobile/ticket-store",
+        formData,
+      );
+
+      debugPrint(
+        "CREATE TICKET RESPONSE : ${response.data}",
+      );
+
+      /// CLOSE DIALOG FIRST
+      if (Get.isDialogOpen ?? false) {
+
+        Get.back();
+      }
+
+      /// SUCCESS SNACKBAR
+      Future.delayed(
+        const Duration(milliseconds: 200),
+            () {
+
+          SnackBarService.showSuccessSnackBar(
+
+            response.data["message"] ??
+                "Ticket created successfully",
+          );
+        },
+      );
+
+      /// REFRESH LIST
+      await getTickets(
+        page: currentPage.value,
+      );
+
+      return true;
+
+    } catch (e) {
+
+      debugPrint("CREATE TICKET ERROR : $e");
+
+      /// DON'T CLOSE DIALOG
+      SnackBarService.showErrorSnackBar(
+        "Failed to create ticket",
+      );
+
+      return false;
+
+    } finally {
+
+      isLoading.value = false;
+    }
+  }
 }

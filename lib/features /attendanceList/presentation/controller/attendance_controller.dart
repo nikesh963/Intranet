@@ -1,266 +1,343 @@
-import 'package:flutter/cupertino.dart';
+import 'package:dio/dio.dart' as dio;
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-
+import 'package:month_year_picker/month_year_picker.dart';
+import '../../../../Common/CommonSnackBar.dart';
+import '../../../../Common/helper/ApiHelper.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../model/attendance_model.dart';
 import '../widget/add_ticket_dialog.dart';
 
 class AttendanceController extends GetxController {
-  final RxList<AttendanceRecord> attendanceRecords = <AttendanceRecord>[
-    AttendanceRecord(
-      employee: 'John Doe',
-      date: 'Dec 15, 2025',
-      day: 'Monday',
-      status: 'Absent',
-      statusCode: 'A',
-      hasTicket: true,
-      punchingTime: '9 H',
-      hubstuffTime: '8 H',
-      leaveRecord: 'None',
-      punchRecords: '2',
-      clockIn: '09:15 AM',
-      clockOut: '06:15 PM',
-      late: '15 min',
-      earlyLeaving: '0 min',
-      overtime: '0 H',
-      updatedBy: 'System',
-      updateAt: 'Dec 15, 10:00 AM',
-    ),
-    AttendanceRecord(
-      employee: 'John Doe',
-      date: 'Dec 16, 2025',
-      day: 'Tuesday',
-      status: 'Present',
-      statusCode: 'P',
-      hasTicket: false,
-      punchingTime: '8 H',
-      hubstuffTime: '8 H',
-      leaveRecord: 'None',
-      punchRecords: '1',
-      clockIn: '09:00 AM',
-      clockOut: '06:00 PM',
-      late: '0 min',
-      earlyLeaving: '0 min',
-      overtime: '0 H',
-      updatedBy: 'System',
-      updateAt: 'Dec 16, 10:00 AM',
-    ),
-    AttendanceRecord(
-      employee: 'John Doe',
-      date: 'Dec 17, 2025',
-      day: 'Wednesday',
-      status: 'Present',
-      statusCode: 'P',
-      hasTicket: false,
-      punchingTime: '8 H',
-      hubstuffTime: 'N/A',
-      leaveRecord: 'None',
-      punchRecords: '1',
-      clockIn: '09:00 AM',
-      clockOut: '06:00 PM',
-      late: '0 min',
-      earlyLeaving: '0 min',
-      overtime: '0 H',
-      updatedBy: 'System',
-      updateAt: 'Dec 17, 10:00 AM',
-    ),
-    AttendanceRecord(
-      employee: 'John Doe',
-      date: 'Dec 18, 2025',
-      day: 'Thursday',
-      status: 'Present',
-      statusCode: 'P',
-      hasTicket: false,
-      punchingTime: 'N/A',
-      hubstuffTime: 'N/A',
-      leaveRecord: 'None',
-      punchRecords: '0',
-      clockIn: 'N/A',
-      clockOut: 'N/A',
-      late: 'N/A',
-      earlyLeaving: 'N/A',
-      overtime: 'N/A',
-      updatedBy: 'System',
-      updateAt: 'Dec 18, 10:00 AM',
-    ),
-    AttendanceRecord(
-      employee: 'John Doe',
-      date: 'Dec 19, 2025',
-      day: 'Friday',
-      status: 'Present',
-      statusCode: 'P',
-      hasTicket: false,
-      punchingTime: 'N/A',
-      hubstuffTime: 'N/A',
-      leaveRecord: 'None',
-      punchRecords: '0',
-      clockIn: 'N/A',
-      clockOut: 'N/A',
-      late: 'N/A',
-      earlyLeaving: 'N/A',
-      overtime: 'N/A',
-      updatedBy: 'System',
-      updateAt: 'Dec 19, 10:00 AM',
-    ),
-    AttendanceRecord(
-      employee: 'John Doe',
-      date: 'Dec 20, 2025',
-      day: 'Saturday',
-      status: 'Absent',
-      statusCode: 'A',
-      hasTicket: true,
-      punchingTime: 'N/A',
-      hubstuffTime: 'N/A',
-      leaveRecord: 'Sick Leave',
-      punchRecords: '0',
-      clockIn: 'N/A',
-      clockOut: 'N/A',
-      late: 'N/A',
-      earlyLeaving: 'N/A',
-      overtime: 'N/A',
-      updatedBy: 'HR',
-      updateAt: 'Dec 20, 09:30 AM',
-    ),
-    AttendanceRecord(
-      employee: 'Jane Smith',
-      date: 'Dec 15, 2025',
-      day: 'Monday',
-      status: 'Present',
-      statusCode: 'P',
-      hasTicket: false,
-      punchingTime: '8.5 H',
-      hubstuffTime: '8 H',
-      leaveRecord: 'None',
-      punchRecords: '1',
-      clockIn: '09:05 AM',
-      clockOut: '06:05 PM',
-      late: '5 min',
-      earlyLeaving: '0 min',
-      overtime: '0.5 H',
-      updatedBy: 'System',
-      updateAt: 'Dec 15, 10:00 AM',
-    ),
-    AttendanceRecord(
-      employee: 'Jane Smith',
-      date: 'Dec 16, 2025',
-      day: 'Tuesday',
-      status: 'Present',
-      statusCode: 'P',
-      hasTicket: false,
-      punchingTime: '8 H',
-      hubstuffTime: '8 H',
-      leaveRecord: 'None',
-      punchRecords: '1',
-      clockIn: '09:00 AM',
-      clockOut: '06:00 PM',
-      late: '0 min',
-      earlyLeaving: '0 min',
-      overtime: '0 H',
-      updatedBy: 'System',
-      updateAt: 'Dec 16, 10:00 AM',
-    ),
-  ].obs;
 
-  final RxString selectedMonth = 'December 2025'.obs;
-  final RxString selectedDate = ''.obs;
-  final RxInt totalAbsent = 2.obs;
-  final RxInt totalPresent = 29.obs;
-  final TextEditingController datePickerController = TextEditingController();
+  final ApiHelper _apiHelper = ApiHelper();
 
-  final Rx<DateTimeRange?> selectedDateRange = Rx<DateTimeRange?>(null);
-  final RxString selectedDateText = ''.obs;
+  /// LOADING
+  RxBool isLoading = false.obs;
+  RxInt currentPage = 1.obs;
+  RxInt lastPage = 1.obs;
+  RxInt totalItems = 0.obs;
+  RxInt perPage = 10.obs;
+  bool get hasNextPage => currentPage.value < lastPage.value;
+  bool get hasPreviousPage => currentPage.value > 1;
+
+  /// MAIN DATA
+  RxList<AttendanceElement> attendanceRecords =
+      <AttendanceElement>[].obs;
+
+  /// STATS
+  RxDouble totalAbsent = 0.0.obs;
+  RxDouble totalPresent = 0.0.obs;
+
+  /// MONTH
+  RxString selectedMonthYear = ''.obs;
+
+  /// PAGINATION
+  // RxInt currentPage = 1.obs;
 
   @override
   void onInit() {
     super.onInit();
-    // Set default to current month
-    _setDefaultCurrentMonth();
+
+    selectedMonthYear.value =
+        DateFormat('MMMM yyyy').format(DateTime.now());
+
+    fetchAttendance();
   }
 
-  void _setDefaultCurrentMonth() {
-    final now = DateTime.now();
-    final firstDayOfMonth = DateTime(now.year, now.month, 1);
-    final lastDayOfMonth = DateTime(now.year, now.month + 1, 0);
+  /// FETCH API
+  // Future<void> fetchAttendance() async {
+  //   try {
+  //     isLoading.value = true;
+  //
+  //     final month =
+  //     DateFormat('yyyy-MM').format(
+  //       DateFormat('MMMM yyyy')
+  //           .parse(selectedMonthYear.value),
+  //     );
+  //
+  //     final response = await _apiHelper.get(
+  //       "/mobile/attendanceemployee",
+  //       queryParameters: {
+  //         "view_type": "table",
+  //         "type": "monthly",
+  //         "month": month,
+  //       },
+  //     );
+  //
+  //     final attendance =
+  //     Attendance.fromJson(response.data);
+  //
+  //     attendanceRecords.value =
+  //         attendance.data?.attendance ?? [];
+  //
+  //     totalPresent.value =
+  //         attendance.data?.attendanceStatus?.present ?? 0;
+  //
+  //     totalAbsent.value =
+  //         attendance.data?.attendanceStatus?.absent ?? 0;
+  //
+  //   } catch (e) {
+  //     Get.snackbar(
+  //       "Error",
+  //       e.toString(),
+  //       backgroundColor: Colors.red,
+  //       colorText: Colors.white,
+  //     );
+  //   } finally {
+  //     isLoading.value = false;
+  //   }
+  // }
+  Future<void> fetchAttendance({int page = 1}) async {
+    try {
+      isLoading.value = true;
 
-    // Ensure last day doesn't exceed current date
-    final safeLastDay = lastDayOfMonth.isAfter(now) ? now : lastDayOfMonth;
+      final month = DateFormat('yyyy-MM').format(
+        DateFormat('MMMM yyyy').parse(
+          selectedMonthYear.value,
+        ),
+      );
 
-    selectedDateRange.value = DateTimeRange(start: firstDayOfMonth, end: safeLastDay);
-    selectedDateText.value = DateFormat('MMMM yyyy').format(now);
-  }
+      final response = await _apiHelper.get(
+        "/mobile/attendanceemployee",
+        queryParameters: {
+          "view_type": "table",
+          "type": "monthly",
+          "month": month,
+          "page": page,
+        },
+      );
 
-  void pickDateRange(BuildContext context) async {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final theme = Theme.of(context);
-    final now = DateTime.now();
+      final attendance = Attendance.fromJson(response.data);
 
-    // Ensure initial date range doesn't exceed current date
-    DateTimeRange? safeInitialRange;
-    if (selectedDateRange.value != null) {
-      final start = selectedDateRange.value!.start;
-      // Ensure end date doesn't exceed current date
-      final end = selectedDateRange.value!.end.isAfter(now)
-          ? now
-          : selectedDateRange.value!.end;
-      safeInitialRange = DateTimeRange(start: start, end: end);
-    } else {
-      _setDefaultCurrentMonth();
-      safeInitialRange = selectedDateRange.value;
+      attendanceRecords.value =
+          attendance.data?.attendance ?? [];
+
+      totalPresent.value =
+          attendance.data?.attendanceStatus?.present ?? 0;
+
+      totalAbsent.value =
+          attendance.data?.attendanceStatus?.absent ?? 0;
+
+      /// PAGINATION DATA
+      currentPage.value =
+          attendance.data?.pagination?.currentPage ?? 1;
+
+      lastPage.value =
+          attendance.data?.pagination?.lastPage ?? 1;
+
+      totalItems.value =
+          attendance.data?.pagination?.total ?? 0;
+
+      perPage.value =
+          attendance.data?.pagination?.perPage ?? 10;
+
+    } catch (e) {
+
+      Get.snackbar(
+        "Error",
+        e.toString(),
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+
+    } finally {
+      isLoading.value = false;
     }
+  }
 
-    final DateTimeRange? picked = await showDateRangePicker(
+  void nextPage() {
+    if (currentPage.value < lastPage.value) {
+      fetchAttendance(page: currentPage.value + 1);
+    }
+  }
+
+  void previousPage() {
+    if (currentPage.value > 1) {
+      fetchAttendance(page: currentPage.value - 1);
+    }
+  }
+
+  void changePage(int page) {
+    if (page != currentPage.value && page <= lastPage.value && page >= 1) {
+      fetchAttendance(page: page);
+    }
+  }
+  /// MONTH PICKER
+  Future<void> pickMonthYear(
+      BuildContext context) async {
+
+    final theme = Theme.of(context);
+
+    final DateTime? picked =
+    await showMonthYearPicker(
       context: context,
-      firstDate: DateTime(2000),
-      lastDate: now, // Current date as last date
-      initialDateRange: safeInitialRange,
-      builder: (BuildContext context, Widget? child) {
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+
+      builder: (context, child) {
         return Theme(
           data: theme.copyWith(
-            colorScheme: theme.colorScheme.copyWith(
-              primary: theme.colorScheme.primary,
-              onPrimary: theme.colorScheme.onPrimary,
-              onSurface: theme.colorScheme.onSurface,
+            colorScheme:
+            theme.colorScheme.copyWith(
+              primary: AppTheme.colors.blue,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black,
             ),
-            textTheme: theme.textTheme.copyWith(
-              bodyMedium: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.textTheme.bodyMedium?.color,
+
+            textButtonTheme:
+            TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor:
+                AppTheme.colors.blue,
               ),
             ),
-            dialogBackgroundColor: theme.dialogBackgroundColor,
-            datePickerTheme: DatePickerThemeData(
-              backgroundColor: isDark ? Colors.grey[900] : Colors.white,
-              headerBackgroundColor:
-              isDark ? Colors.grey[850] : theme.colorScheme.primary,
-              rangeSelectionBackgroundColor:
-              theme.colorScheme.primary.withOpacity(0.2),
-            ),
           ),
-          child: child!,
+
+          child: MediaQuery(
+            data: MediaQuery.of(context)
+                .copyWith(
+              textScaler:
+              const TextScaler.linear(0.92),
+            ),
+            child: child!,
+          ),
         );
       },
     );
 
     if (picked != null) {
-      selectedDateRange.value = picked;
 
-      // Format to show month and year only
-      final monthYear = DateFormat('MMMM yyyy').format(picked.start);
-      selectedDateText.value = monthYear;
-
-      // Also update the TextEditingController if you still need it
-      datePickerController.text = monthYear;
-
-      print('Selected month: $monthYear');
-      print('Start date: ${DateFormat('yyyy-MM-dd').format(picked.start)}');
-      print('End date: ${DateFormat('yyyy-MM-dd').format(picked.end)}');
+      selectedMonthYear.value =
+          DateFormat('MMMM yyyy')
+              .format(picked);
+      currentPage.value = 1;
+      fetchAttendance(page: 1);
     }
   }
 
-  void onAddTicketPressed(String date) {
-    Get.dialog(
-      AddTicketDialog(date: date),
-      barrierDismissible: false,
+  // void onAddTicketPressed(String date) {
+  //   Get.dialog(
+  //     AddTicketDialog(date: date),
+  //     barrierDismissible: false,
+  //   );
+  // }
+  void onAddTicketPressed(AttendanceElement record) {
+
+    Get.dialog(AddTicketDialog(record: record),
+
+      /// CLOSE WHEN CLICK OUTSIDE
+      barrierDismissible: true,
     );
+  }
+
+  /// FORMATTERS
+  String formatDate(DateTime? date) {
+    if (date == null) return "-";
+    return DateFormat('dd MMM yyyy')
+        .format(date);
+  }
+
+  String formatDateTime(DateTime? date) {
+    if (date == null) return "-";
+    return DateFormat('dd MMM yyyy, hh:mm a')
+        .format(date);
+  }
+
+  Future<bool> createAttendanceTicket({
+    required String title,
+    required String priority,
+    required String description,
+    required String department,
+    required int attendanceId,
+    PlatformFile? file,
+  }) async {
+
+    try {
+
+      isLoading.value = true;
+
+      dio.FormData formData = dio.FormData.fromMap({
+
+        "title": title,
+
+        "priority": priority.toLowerCase(),
+
+        "description": description,
+
+        "ticket_department": department,
+
+        "attendance_id": attendanceId,
+      });
+
+      /// FILE
+      if (file != null && file.path != null) {
+
+        formData.files.add(
+          MapEntry(
+            "atteched_file[]",
+
+            await dio.MultipartFile.fromFile(
+              file.path!,
+              filename: file.name,
+            ),
+          ),
+        );
+      }
+
+      final response = await _apiHelper.postFormData(
+        "/mobile/ticket-store",
+        formData,
+      );
+
+      debugPrint(
+        "CREATE ATTENDANCE TICKET RESPONSE : ${response.data}",
+      );
+
+      /// CLOSE DIALOG ON SUCCESS
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
+
+      /// SUCCESS SNACKBAR
+      Future.delayed(
+        const Duration(milliseconds: 200),
+            () {
+
+          SnackBarService.showSuccessSnackBar(
+            response.data["message"] ??
+                "Ticket created successfully",
+          );
+        },
+      );
+
+      /// REFRESH ATTENDANCE
+      await fetchAttendance(
+        page: currentPage.value,
+      );
+
+      return true;
+
+    } catch (e) {
+
+      debugPrint(
+        "CREATE ATTENDANCE TICKET ERROR : $e",
+      );
+
+      /// DO NOT CLOSE DIALOG
+      SnackBarService.showErrorSnackBar(
+        "Failed to create ticket",
+      );
+
+      return false;
+
+    } finally {
+
+      isLoading.value = false;
+    }
   }
 }

@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../Common/CommonSnackBar.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../controller/manage_leave_controller.dart';
 
 class CreateLeaveDialog extends StatefulWidget {
   const CreateLeaveDialog({Key? key}) : super(key: key);
@@ -19,6 +20,7 @@ class _CreateLeaveDialogState extends State<CreateLeaveDialog> {
   final TextEditingController _reasonController = TextEditingController();
   final TextEditingController _startDateController = TextEditingController();
   final TextEditingController _endDateController = TextEditingController();
+  final ManageLeaveController controller = Get.find<ManageLeaveController>();
 
   // Dropdown values
   String? _selectedLeaveType;
@@ -29,6 +31,16 @@ class _CreateLeaveDialogState extends State<CreateLeaveDialog> {
   DateTime? _startDate;
   DateTime? _endDate;
 
+  DateTime getMinimumDate() {
+
+    /// LOP => allow all previous dates
+    if (_selectedLeaveType == 'LOP (Loss Of Pay)') {
+      return DateTime(2000);
+    }
+
+    /// Earned => allow only after 3 days
+    return DateTime.now().add(const Duration(days: 3));
+  }
   // Leave type options
   final List<String> _leaveTypeOptions = [
     'LOP (Loss Of Pay)',
@@ -73,30 +85,136 @@ class _CreateLeaveDialogState extends State<CreateLeaveDialog> {
                 SizedBox(height: 20.h),
 
                 // Leave Type Dropdown
-                DropdownButtonFormField<String>(
-                  decoration: InputDecoration(
-                    labelText: 'Leave Type',
-                    border: OutlineInputBorder(
+                // DropdownButtonFormField<String>(
+                //   decoration: InputDecoration(
+                //     labelText: 'Leave Type',
+                //     border: OutlineInputBorder(
+                //       borderRadius: BorderRadius.circular(8.r),
+                //     ),
+                //   ),
+                //   value: _selectedLeaveType,
+                //   items: _leaveTypeOptions.map((String value) {
+                //     return DropdownMenuItem<String>(
+                //       value: value,
+                //       child: Text(value),
+                //     );
+                //   }).toList(),
+                //   onChanged: (String? newValue) {
+                //     setState(() {
+                //       _selectedLeaveType = newValue;
+                //     });
+                //   },
+                //   hint: Text('Select Leave Type'),
+                // ),
+                PopupMenuButton<String>(
+                  color: Colors.white,
+                  offset: Offset(0, 5.h),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12.w,vertical: 14.h),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade400),
                       borderRadius: BorderRadius.circular(8.r),
                     ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(_selectedLeaveType ?? 'Select Leave Type'),
+                        Icon(Icons.arrow_drop_down),
+                      ],
+                    ),
                   ),
-                  value: _selectedLeaveType,
-                  items: _leaveTypeOptions.map((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
-                  onChanged: (String? newValue) {
+                  constraints: BoxConstraints(
+                    minWidth: 150.w,
+                    maxWidth: 300.h,
+                    maxHeight: 300.h,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                  elevation: 8,
+                  menuPadding: EdgeInsets.all(12.w),
+
+                  itemBuilder: (BuildContext context) {
+                    return _leaveTypeOptions.map((String value) {
+                      return PopupMenuItem<String>(
+                        value: value,
+                        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                        child: Text(value),
+                      );
+                    }).toList();
+                  },
+                  // onSelected: (String newValue) {
+                  //   setState(() {
+                  //     _selectedLeaveType = newValue;
+                  //   });
+                  // },
+                  onSelected: (String newValue) {
                     setState(() {
+
                       _selectedLeaveType = newValue;
+
+                      /// RESET DATES
+                      _startDate = null;
+                      _endDate = null;
+
+                      _startDateController.clear();
+                      _endDateController.clear();
+
+                      _selectedStartDay = null;
+                      _selectedEndDay = null;
                     });
                   },
-                  hint: Text('Select Leave Type'),
                 ),
                 SizedBox(height: 16.h),
 
                 // Start Date Section
+                // Row(
+                //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                //   children: [
+                //     // Start Date Calendar
+                //     Expanded(
+                //       flex: 2,
+                //       child: TextField(
+                //         controller: _startDateController,
+                //         readOnly: true,
+                //         decoration: InputDecoration(
+                //           labelText: 'Start Date',
+                //           border: OutlineInputBorder(
+                //             borderRadius: BorderRadius.circular(8.r),
+                //           ),
+                //           suffixIcon: Icon(Icons.calendar_today),
+                //         ),
+                //         onTap: () => _selectStartDate(context),
+                //       ),
+                //     ),
+                //     SizedBox(width: 4.w),
+                //     // Start Day Dropdown
+                //     Expanded(
+                //       flex: 2,
+                //       child: DropdownButtonFormField<String>(
+                //         decoration: InputDecoration(
+                //           labelText: 'Select Day',
+                //           border: OutlineInputBorder(
+                //             borderRadius: BorderRadius.circular(8.r),
+                //           ),
+                //         ),
+                //         value: _selectedStartDay,
+                //         items: _dayOptions.map((String value) {
+                //           return DropdownMenuItem<String>(
+                //             value: value,
+                //             child: Text(value),
+                //           );
+                //         }).toList(),
+                //         onChanged: (String? newValue) {
+                //           setState(() {
+                //             _selectedStartDay = newValue;
+                //           });
+                //         },
+                //         hint: Text('Select'),
+                //       ),
+                //     ),
+                //   ],
+                // ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -120,33 +238,103 @@ class _CreateLeaveDialogState extends State<CreateLeaveDialog> {
                     // Start Day Dropdown
                     Expanded(
                       flex: 2,
-                      child: DropdownButtonFormField<String>(
-                        decoration: InputDecoration(
-                          labelText: 'Select Day',
-                          border: OutlineInputBorder(
+                      child: PopupMenuButton<String>(
+                        color: Colors.white,
+                        offset: Offset(0, 5.h),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.shade400),
                             borderRadius: BorderRadius.circular(8.r),
                           ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(_selectedStartDay ?? 'Select'),
+                              Icon(Icons.arrow_drop_down),
+                            ],
+                          ),
                         ),
-                        value: _selectedStartDay,
-                        items: _dayOptions.map((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value),
-                          );
-                        }).toList(),
-                        onChanged: (String? newValue) {
+                        constraints: BoxConstraints(
+                          minWidth: 150.w,
+                          maxWidth: 300.w,
+                          maxHeight: 300.h,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        elevation: 8,
+                        menuPadding: EdgeInsets.all(12.w),
+                        itemBuilder: (BuildContext context) {
+                          return _dayOptions.map((String value) {
+                            return PopupMenuItem<String>(
+                              value: value,
+                              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                              child: Text(value),
+                            );
+                          }).toList();
+                        },
+                        onSelected: (String newValue) {
                           setState(() {
                             _selectedStartDay = newValue;
                           });
                         },
-                        hint: Text('Select'),
                       ),
                     ),
                   ],
                 ),
+
                 SizedBox(height: 16.h),
 
                 // End Date Section
+                // Row(
+                //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                //   children: [
+                //     // End Date Calendar
+                //     Expanded(
+                //       flex: 2,
+                //       child: TextField(
+                //         controller: _endDateController,
+                //         readOnly: true,
+                //         decoration: InputDecoration(
+                //           labelText: 'End Date',
+                //           border: OutlineInputBorder(
+                //             borderRadius: BorderRadius.circular(8.r),
+                //           ),
+                //           suffixIcon: Icon(Icons.calendar_today),
+                //         ),
+                //         onTap: () => _selectEndDate(context),
+                //       ),
+                //     ),
+                //     SizedBox(width: 4.w),
+                //
+                //     // End Day Dropdown
+                //     Expanded(
+                //       flex: 2,
+                //       child: DropdownButtonFormField<String>(
+                //         decoration: InputDecoration(
+                //           labelText: 'Select Day',
+                //           border: OutlineInputBorder(
+                //             borderRadius: BorderRadius.circular(8.r),
+                //           ),
+                //         ),
+                //         value: _selectedEndDay,
+                //         items: _dayOptions.map((String value) {
+                //           return DropdownMenuItem<String>(
+                //             value: value,
+                //             child: Text(value),
+                //           );
+                //         }).toList(),
+                //         onChanged: (String? newValue) {
+                //           setState(() {
+                //             _selectedEndDay = newValue;
+                //           });
+                //         },
+                //         hint: Text('Select'),
+                //       ),
+                //     ),
+                //   ],
+                // ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -171,26 +359,47 @@ class _CreateLeaveDialogState extends State<CreateLeaveDialog> {
                     // End Day Dropdown
                     Expanded(
                       flex: 2,
-                      child: DropdownButtonFormField<String>(
-                        decoration: InputDecoration(
-                          labelText: 'Select Day',
-                          border: OutlineInputBorder(
+                      child: PopupMenuButton<String>(
+                        color: Colors.white,
+                        offset: Offset(0, 5.h),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.shade400),
                             borderRadius: BorderRadius.circular(8.r),
                           ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(_selectedEndDay ?? 'Select'),
+                              Icon(Icons.arrow_drop_down),
+                            ],
+                          ),
                         ),
-                        value: _selectedEndDay,
-                        items: _dayOptions.map((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value),
-                          );
-                        }).toList(),
-                        onChanged: (String? newValue) {
+                        constraints: BoxConstraints(
+                          minWidth: 150.w,
+                          maxWidth: 300.w,
+                          maxHeight: 300.h,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        elevation: 8,
+                        menuPadding: EdgeInsets.all(12.w),
+                        itemBuilder: (BuildContext context) {
+                          return _dayOptions.map((String value) {
+                            return PopupMenuItem<String>(
+                              value: value,
+                              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                              child: Text(value),
+                            );
+                          }).toList();
+                        },
+                        onSelected: (String newValue) {
                           setState(() {
                             _selectedEndDay = newValue;
                           });
                         },
-                        hint: Text('Select'),
                       ),
                     ),
                   ],
@@ -215,36 +424,17 @@ class _CreateLeaveDialogState extends State<CreateLeaveDialog> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    // Cancel Button
-                    TextButton(
-                      onPressed: () {
-                        Get.back();
-                      },
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 24.w,
-                          vertical: 12.h,
-                        ),
-                      ),
-                      child: Text(
-                        'Cancel',
-                        style: TextStyle(fontSize: 14.sp),
-                      ),
-                    ),
-                    SizedBox(width: 12.w),
-
                     // Create Button
                     ElevatedButton(
                       onPressed: () async {
                         if (_validateForm()) {
                           await _createLeave();
-                          Get.back();
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
+                        backgroundColor: AppTheme.colors.blue,
                         padding: EdgeInsets.symmetric(
-                          horizontal: 24.w,
+                          horizontal: 44.w,
                           vertical: 12.h,
                         ),
                         shape: RoundedRectangleBorder(
@@ -256,6 +446,45 @@ class _CreateLeaveDialogState extends State<CreateLeaveDialog> {
                         style: TextStyle(
                           fontSize: 14.sp,
                           color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    // Cancel Button
+                    // TextButton(
+                    //   onPressed: () {
+                    //     Get.back();
+                    //   },
+                    //   style: TextButton.styleFrom(
+                    //     padding: EdgeInsets.symmetric(
+                    //       horizontal: 24.w,
+                    //       vertical: 12.h,
+                    //     ),
+                    //   ),
+                    //   child: Text(
+                    //     'Cancel',
+                    //     style: TextStyle(fontSize: 14.sp),
+                    //   ),
+                    // ),
+                    SizedBox(width: 10.w,),
+                    ElevatedButton(
+                      onPressed: () async {
+                        Get.back();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 44.w,
+                          vertical: 12.h,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                      ),
+                      child: Text(
+                        'Cancel',
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          color: Colors.black,
                         ),
                       ),
                     ),
@@ -271,11 +500,43 @@ class _CreateLeaveDialogState extends State<CreateLeaveDialog> {
 
   // Select Start Date
   Future<void> _selectStartDate(BuildContext context) async {
+    if (_selectedLeaveType == null) {
+      SnackBarService.showErrorSnackBar(
+        "Please select leave type first",
+      );
+      return;
+    }
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime.now(),
+      // initialDate: DateTime.now(),
+      initialDate: _selectedLeaveType == 'LOP (Loss Of Pay)'
+          ? DateTime.now()
+          : getMinimumDate(),
+
+      // firstDate: DateTime.now(),
+      firstDate: getMinimumDate(),
       lastDate: DateTime(DateTime.now().year + 1),
+      builder: (BuildContext context, Widget? child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            // Primary color (header, selected date, etc.)
+            primaryColor: Colors.blue, // Change this to your desired color
+            // Background color of the date picker
+            colorScheme: ColorScheme.light(
+              primary: Colors.blue, // Header background and selected date
+              onPrimary: Colors.white, // Text color on header
+              surface: Colors.white, // Background color
+              onSurface: Colors.black, // Text color
+            ),
+            // Button colors
+            dialogBackgroundColor: Colors.white,
+            buttonTheme: ButtonThemeData(
+              textTheme: ButtonTextTheme.primary,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
 
     if (picked != null && picked != _startDate) {
@@ -295,12 +556,46 @@ class _CreateLeaveDialogState extends State<CreateLeaveDialog> {
 
   // Select End Date
   Future<void> _selectEndDate(BuildContext context) async {
-    final DateTime initialDate = _startDate ?? DateTime.now();
+    if (_selectedLeaveType == null) {
+      SnackBarService.showErrorSnackBar(
+        "Please select leave type first",
+      );
+      return;
+    }
+    // final DateTime initialDate = _startDate ?? DateTime.now();
+    final DateTime initialDate =
+        _startDate ??
+            (_selectedLeaveType == 'LOP (Loss Of Pay)'
+                ? DateTime.now()
+                : getMinimumDate());
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: initialDate,
-      firstDate: _startDate ?? DateTime.now(),
+
+      // firstDate: _startDate ?? DateTime.now(),
+      firstDate: _startDate ?? getMinimumDate(),
       lastDate: DateTime(DateTime.now().year + 1),
+      builder: (BuildContext context, Widget? child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            // Primary color (header, selected date, etc.)
+            primaryColor: Colors.blue, // Change this to your desired color
+            // Background color of the date picker
+            colorScheme: ColorScheme.light(
+              primary: Colors.blue, // Header background and selected date
+              onPrimary: Colors.white, // Text color on header
+              surface: Colors.white, // Background color
+              onSurface: Colors.black, // Text color
+            ),
+            // Button colors
+            dialogBackgroundColor: Colors.white,
+            buttonTheme: ButtonThemeData(
+              textTheme: ButtonTextTheme.primary,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
 
     if (picked != null && picked != _endDate) {
@@ -348,21 +643,15 @@ class _CreateLeaveDialogState extends State<CreateLeaveDialog> {
 
   // Create Leave
   Future<void> _createLeave() async {
-    // Here you would typically call an API to create the leave
-    // For now, we'll just show a success message
 
-    // Calculate total days if both dates are selected
-    String totalDays = "1";
-    if (_startDate != null && _endDate != null) {
-      final difference = _endDate!.difference(_startDate!);
-      totalDays = (difference.inDays + 1).toString();
-    }
-
-    SnackBarService.showSuccessSnackBar(
-      'Leave created successfully!',
+    final bool isSuccess = await controller.createLeave(
+      leaveType: _selectedLeaveType!,
+      startDate: _startDateController.text.trim(),
+      endDate: _endDateController.text.trim(),
+      leaveReason: _reasonController.text.trim(),
+      startDay: _selectedStartDay!,
+      endDay: _selectedEndDay!,
     );
-    await Future.delayed(Duration(milliseconds: 1000));
-    Get.back();
   }
 
   @override
