@@ -12,3 +12,24 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+
+
+# Flutter/Dart/Pub
+.dart_tool/
+.packages
+build/
+
+# iOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/ephemeral/
+ios/build/
+
+# Xcode
+*.xcworkspace
+xcuserdata/
+DerivedData/
+
+# macOS
+macos/Pods/
+macos/build/

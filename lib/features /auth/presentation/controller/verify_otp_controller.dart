@@ -97,7 +97,7 @@ class VerifyOtpController extends GetxController {
       isResending.value = true;
 
       await apiHelper.post(
-        '/mobile/forgot-password',
+        '/mobile/resend-otp',
         data: {
           "email" : email,
         },

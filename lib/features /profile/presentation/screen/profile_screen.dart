@@ -236,7 +236,7 @@ class ProfileScreen extends StatelessWidget {
       children: [
         Expanded(
           child: Container(
-            padding: EdgeInsets.all(18.w),
+            padding: EdgeInsets.symmetric(vertical: 18.w,horizontal: 12.w),
             decoration: BoxDecoration(
               color: AppTheme.colors.white,
               border: Border.all(color: AppTheme.colors.black.withOpacity(0.1)),
