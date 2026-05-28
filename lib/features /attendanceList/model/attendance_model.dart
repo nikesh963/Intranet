@@ -1,6 +1,6 @@
 // To parse this JSON data, do
 //
-//     final attendance = attendanceFromJson(jsonString);
+// final attendance = attendanceFromJson(jsonString);
 
 import 'dart:convert';
 
@@ -31,7 +31,8 @@ class Attendance {
 class Data {
   List<AttendanceElement>? attendance;
   List<AllEmpLeaf>? allEmpLeaves;
-  List<dynamic>? forMonthlyShow;
+// List<dynamic>? forMonthlyShow;
+  ForMonthlyShow? forMonthlyShow;
   Branch? branch;
   Department? department;
   AttendanceStatus? attendanceStatus;
@@ -54,7 +55,9 @@ class Data {
   factory Data.fromJson(Map<String, dynamic> json) => Data(
     attendance: json["attendance"] == null ? [] : List<AttendanceElement>.from(json["attendance"]!.map((x) => AttendanceElement.fromJson(x))),
     allEmpLeaves: json["all_emp_leaves"] == null ? [] : List<AllEmpLeaf>.from(json["all_emp_leaves"]!.map((x) => AllEmpLeaf.fromJson(x))),
-    forMonthlyShow: json["for_monthly_show"] == null ? [] : List<dynamic>.from(json["for_monthly_show"]!.map((x) => x)),
+    forMonthlyShow: json["for_monthly_show"] == null
+        ? null
+        : ForMonthlyShow.fromJson(json["for_monthly_show"]),
     branch: json["branch"] == null ? null : Branch.fromJson(json["branch"]),
     department: json["department"] == null ? null : Department.fromJson(json["department"]),
     attendanceStatus: json["attendance_status"] == null ? null : AttendanceStatus.fromJson(json["attendance_status"]),
@@ -68,7 +71,7 @@ class Data {
   Map<String, dynamic> toJson() => {
     "attendance": attendance == null ? [] : List<dynamic>.from(attendance!.map((x) => x.toJson())),
     "all_emp_leaves": allEmpLeaves == null ? [] : List<dynamic>.from(allEmpLeaves!.map((x) => x.toJson())),
-    "for_monthly_show": forMonthlyShow == null ? [] : List<dynamic>.from(forMonthlyShow!.map((x) => x)),
+    "for_monthly_show": forMonthlyShow?.toJson(),
     "branch": branch?.toJson(),
     "department": department?.toJson(),
     "attendance_status": attendanceStatus?.toJson(),
@@ -78,6 +81,42 @@ class Data {
   };
 }
 
+class ForMonthlyShow {
+  int? id;
+  String? setting;
+  String? value;
+  DateTime? createdAt;
+  DateTime? updatedAt;
+
+  ForMonthlyShow({
+    this.id,
+    this.setting,
+    this.value,
+    this.createdAt,
+    this.updatedAt,
+  });
+
+  factory ForMonthlyShow.fromJson(Map<String, dynamic> json) =>
+      ForMonthlyShow(
+        id: json["id"],
+        setting: json["setting"],
+        value: json["value"],
+        createdAt: json["created_at"] == null
+            ? null
+            : DateTime.parse(json["created_at"]),
+        updatedAt: json["updated_at"] == null
+            ? null
+            : DateTime.parse(json["updated_at"]),
+      );
+
+  Map<String, dynamic> toJson() => {
+    "id": id,
+    "setting": setting,
+    "value": value,
+    "created_at": createdAt?.toIso8601String(),
+    "updated_at": updatedAt?.toIso8601String(),
+  };
+}
 class AllEmpLeaf {
   DateTime? leaveDate;
   String? type;
@@ -222,7 +261,6 @@ class AttendanceElement {
   };
 }
 
-
 enum Status {
   ABSENT,
   HALF_DAY,
@@ -268,50 +306,86 @@ class AttendanceStatus {
 }
 
 class Branch {
-  String? the1;
-  String? the2;
-  String? the3;
-  String? the4;
-  String? empty;
+  int? id;
+  String? name;
+  int? createdBy;
+  DateTime? createdAt;
+  DateTime? updatedAt;
+  int? employeeId;
 
   Branch({
-    this.the1,
-    this.the2,
-    this.the3,
-    this.the4,
-    this.empty,
+    this.id,
+    this.name,
+    this.createdBy,
+    this.createdAt,
+    this.updatedAt,
+    this.employeeId,
   });
 
   factory Branch.fromJson(Map<String, dynamic> json) => Branch(
-    the1: json["1"],
-    the2: json["2"],
-    the3: json["3"],
-    the4: json["4"],
-    empty: json[""],
+    id: json["id"],
+    name: json["name"],
+    createdBy: json["created_by"],
+    createdAt: json["created_at"] == null
+        ? null
+        : DateTime.parse(json["created_at"]),
+    updatedAt: json["updated_at"] == null
+        ? null
+        : DateTime.parse(json["updated_at"]),
+    employeeId: json["employee_id"],
   );
 
   Map<String, dynamic> toJson() => {
-    "1": the1,
-    "2": the2,
-    "3": the3,
-    "4": the4,
-    "": empty,
+    "id": id,
+    "name": name,
+    "created_by": createdBy,
+    "created_at": createdAt?.toIso8601String(),
+    "updated_at": updatedAt?.toIso8601String(),
+    "employee_id": employeeId,
   };
 }
 
 class Department {
-  String? empty;
+  int? id;
+  int? branchId;
+  String? name;
+  int? createdBy;
+  DateTime? createdAt;
+  DateTime? updatedAt;
+  int? employeeId;
 
   Department({
-    this.empty,
+    this.id,
+    this.branchId,
+    this.name,
+    this.createdBy,
+    this.createdAt,
+    this.updatedAt,
+    this.employeeId,
   });
 
   factory Department.fromJson(Map<String, dynamic> json) => Department(
-    empty: json[""],
+    id: json["id"],
+    branchId: json["branch_id"],
+    name: json["name"],
+    createdBy: json["created_by"],
+    createdAt: json["created_at"] == null
+        ? null
+        : DateTime.parse(json["created_at"]),
+    updatedAt: json["updated_at"] == null
+        ? null
+        : DateTime.parse(json["updated_at"]),
+    employeeId: json["employee_id"],
   );
 
   Map<String, dynamic> toJson() => {
-    "": empty,
+    "id": id,
+    "branch_id": branchId,
+    "name": name,
+    "created_by": createdBy,
+    "created_at": createdAt?.toIso8601String(),
+    "updated_at": updatedAt?.toIso8601String(),
+    "employee_id": employeeId,
   };
 }
 
@@ -342,10 +416,13 @@ class EnumValues<T> {
   EnumValues(this.map);
 
   Map<T, String> get reverse {
-    reverseMap = map.map((k, v) => MapEntry(v, k));
+    reverseMap = map.map(
+          (key, value) => MapEntry(value, key),
+    );
     return reverseMap;
   }
 }
+
 class Pagination {
   int? total;
   int? perPage;
