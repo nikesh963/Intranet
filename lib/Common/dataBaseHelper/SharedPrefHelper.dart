@@ -6,6 +6,8 @@ import 'package:get/get_core/src/get_main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/routes/app_pages.dart';
 import '../../core/theme/app_theme.dart';
+import '../../features /dashboard/presentation/controller/dashboard_controller.dart';
+import '../../features /home/presentation/controller/home_controller.dart';
 
 
 class SharedPrefHelper {
@@ -259,25 +261,40 @@ class SharedPrefHelper {
                   child: InkWell(
                     borderRadius: BorderRadius.circular(16.r),
                     onTap: () async {
-                      HapticFeedback.selectionClick(); // small vibration
+                      HapticFeedback.selectionClick();
                       await Future.delayed(const Duration(milliseconds: 300));
 
-                      // // 👇 clear shared prefs and logout
-                      // final prefs = await SharedPreferences.getInstance();
-                      // await prefs.clear();
                       final prefs = await SharedPreferences.getInstance();
 
-                      // ✅ Clear only login/session data, keep onboarding + install info
-                      await prefs.remove('accessToken');
-                      await prefs.remove('refreshToken');
-                      await prefs.remove('user_id');
-                      await prefs.remove('user_role');
-                      await prefs.remove('user_email');
+                      /// save persistent values
+                      final rememberMe = prefs.getBool('remember_me');
+                      final username = prefs.getString('username');
+                      final password = prefs.getString('saved_password');
 
-                      print("🚪 Logged out. Cleared login, preserved onboarding + install.");
+                      /// clear everything
+                      await prefs.clear();
 
-                      Get.offNamedUntil(
-                          AppRoutes.login, (Route<dynamic> route) => false);
+                      /// restore remember me data
+                      if (rememberMe != null) {
+                        await prefs.setBool('remember_me', rememberMe);
+                      }
+
+                      if (username != null) {
+                        await prefs.setString('username', username);
+                      }
+
+                      if (password != null) {
+                        await prefs.setString('saved_password', password);
+                      }
+
+                      /// delete controllers
+                      Get.delete<DashboardController>(force: true);
+                      Get.delete<HomeController>(force: true);
+
+                      print("🚪 Full logout completed");
+
+                      /// go to login
+                      Get.offAllNamed(AppRoutes.login);
                     },
                     child: Container(
                       decoration: BoxDecoration(
